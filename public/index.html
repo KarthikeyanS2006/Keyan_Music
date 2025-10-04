@@ -4,13 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Keyan Music - Stream Your World</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <meta name="theme-color" content="#007AFF">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23007AFF'/><text x='50' y='60' text-anchor='middle' fill='white' font-size='40' font-family='Arial'>K</text></svg>">
 </head>
+
     <style>
         /* Apple-inspired Keyan Music Styles */
 * {
@@ -291,12 +293,20 @@ body {
     font-weight: var(--font-weight-medium);
 }
 
+/* Add this to your styles.css file */
 .profile-pic {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    object-fit: cover;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: var(--font-weight-bold);
+    font-size: 14px;
 }
+
 
 /* Main Content */
 .main {
@@ -948,7 +958,7 @@ body {
                 </a>
             </nav>
             <div class="user-menu glass-button">
-                <img src="https://via.placeholder.com/40x40/007AFF/FFFFFF?text=K" alt="Profile" class="profile-pic">
+                <div class="profile-pic">K</div>
                 <span class="username">Karthikeyan</span>
                 <i class="fas fa-chevron-down"></i>
             </div>
@@ -1125,4 +1135,5 @@ body {
     <script src="script.js"></script>
 </body>
 </html>
+
 
