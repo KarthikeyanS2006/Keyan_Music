@@ -95,55 +95,119 @@ app.get('/api/search', async (req, res) => {
 });
 
 // Download route
+// FIXED Download route - Replace the existing one in your server.js
 app.get('/api/download/:videoId', async (req, res) => {
     try {
         const videoId = req.params.videoId;
-        const videoURL = `https://youtube.com/watch?v=${videoId}`;
+        const videoURL = 'https://youtube.com/watch?v=' + videoId;
         
-        console.log(`📥 Download request for: ${videoId}`);
+        console.log('📥 Download request for videoId:', videoId);
         
+        // Validate video ID first
+        if (!videoId || videoId.length !== 11) {
+            console.error('❌ Invalid video ID format:', videoId);
+            return res.status(400).json({ error: 'Invalid video ID format' });
+        }
+        
+        // Check if URL is valid
         if (!ytdl.validateURL(videoURL)) {
             console.error('❌ Invalid video URL:', videoURL);
             return res.status(400).json({ error: 'Invalid video URL' });
         }
         
-        const info = await ytdl.getInfo(videoURL);
-        const title = info.videoDetails.title.replace(/[^a-zA-Z0-9 ]/g, '').substring(0, 50);
+        console.log('✅ Starting download process for:', videoURL);
         
-        console.log(`📥 Starting download: ${title}`);
+        // Get video info with better error handling
+        let info;
+        try {
+            info = await ytdl.getInfo(videoURL, {
+                requestOptions: {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                    }
+                }
+            });
+        } catch (infoError) {
+            console.error('❌ Error getting video info:', infoError.message);
+            return res.status(500).json({ 
+                error: 'Unable to get video information',
+                details: infoError.message
+            });
+        }
         
+        const title = info.videoDetails.title
+            .replace(/[^a-zA-Z0-9 ]/g, '')
+            .substring(0, 50)
+            .trim() || 'unknown_song';
+        
+        console.log('📥 Video title:', title);
+        
+        // Get the best audio format
+        const audioFormats = ytdl.filterFormats(info.formats, 'audioonly');
+        if (audioFormats.length === 0) {
+            console.error('❌ No audio formats available');
+            return res.status(500).json({ error: 'No audio formats available for this video' });
+        }
+        
+        console.log('🎵 Found', audioFormats.length, 'audio formats');
+        
+        // Create audio stream with better options
         const audioStream = ytdl(videoURL, { 
             quality: 'highestaudio',
-            filter: 'audioonly'
+            filter: 'audioonly',
+            requestOptions: {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                }
+            }
         });
         
+        // Set response headers
         res.set({
             'Content-Type': 'audio/mpeg',
-            'Content-Disposition': `attachment; filename="${title}.mp3"`,
+            'Content-Disposition': 'attachment; filename="' + title + '.mp3"',
             'Access-Control-Allow-Origin': '*',
-            'Cache-Control': 'no-cache'
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive'
         });
         
-        audioStream.pipe(res);
+        console.log('🚀 Starting audio stream...');
+        
+        // Handle stream events
+        audioStream.on('progress', (chunkLength, downloaded, total) => {
+            const percent = (downloaded / total * 100).toFixed(2);
+            console.log('📊 Download progress:', percent + '%');
+        });
         
         audioStream.on('error', (error) => {
-            console.error('❌ Download stream error:', error);
+            console.error('❌ Audio stream error:', error);
             if (!res.headersSent) {
-                res.status(500).json({ error: 'Download failed' });
+                res.status(500).json({ 
+                    error: 'Download stream failed',
+                    details: error.message
+                });
             }
         });
         
         audioStream.on('end', () => {
-            console.log(`✅ Download completed: ${title}`);
+            console.log('✅ Download completed successfully:', title);
         });
+        
+        // Pipe the audio stream to response
+        audioStream.pipe(res);
         
     } catch (error) {
         console.error('❌ Download error:', error);
         if (!res.headersSent) {
-            res.status(500).json({ error: 'Download failed: ' + error.message });
+            res.status(500).json({ 
+                error: 'Download failed', 
+                message: error.message,
+                stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            });
         }
     }
 });
+
 
 // Serve main app
 app.get('/', (req, res) => {
@@ -1174,3 +1238,4 @@ if (process.env.NODE_ENV !== 'production') {
         console.log(`🎵 Keyan Music server running at http://localhost:${port}`);
     });
 }
+
