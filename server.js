@@ -1,11 +1,10 @@
-// Keyan Music - Clean & Simple Server
+// Keyan Music - Complete Clean & Simple Server (FIXED)
 import express from 'express';
 import cors from 'cors';
 import YTMusic from 'ytmusic-api';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import ytdl from 'ytdl-core';  // Add this line
-
+import ytdl from 'ytdl-core';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,15 +46,13 @@ async function initializeYTMusic() {
 app.use(cors());
 app.use(express.json());
 
-// Serve static files
-app.use(express.static('public'));
-
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'ok', 
         message: 'Keyan Music API is running',
-        initialized: isInitialized
+        initialized: isInitialized,
+        timestamp: new Date().toISOString()
     });
 });
 
@@ -96,40 +93,39 @@ app.get('/api/search', async (req, res) => {
         });
     }
 });
-// Download route - Add this to your server.js
+
+// Download route
 app.get('/api/download/:videoId', async (req, res) => {
     try {
         const videoId = req.params.videoId;
         const videoURL = `https://youtube.com/watch?v=${videoId}`;
         
-        // Validate video ID
+        console.log(`📥 Download request for: ${videoId}`);
+        
         if (!ytdl.validateURL(videoURL)) {
+            console.error('❌ Invalid video URL:', videoURL);
             return res.status(400).json({ error: 'Invalid video URL' });
         }
         
-        // Get video info first
         const info = await ytdl.getInfo(videoURL);
-        const title = info.videoDetails.title.replace(/[^\w\s]/gi, ''); // Clean filename
+        const title = info.videoDetails.title.replace(/[^a-zA-Z0-9 ]/g, '').substring(0, 50);
         
-        // Download audio stream
+        console.log(`📥 Starting download: ${title}`);
+        
         const audioStream = ytdl(videoURL, { 
             quality: 'highestaudio',
             filter: 'audioonly'
         });
         
-        // Set headers for download
         res.set({
             'Content-Type': 'audio/mpeg',
             'Content-Disposition': `attachment; filename="${title}.mp3"`,
-            'Access-Control-Allow-Origin': '*'
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'no-cache'
         });
         
-        console.log(`📥 Downloading: ${title}`);
-        
-        // Stream the audio to user
         audioStream.pipe(res);
         
-        // Handle stream errors
         audioStream.on('error', (error) => {
             console.error('❌ Download stream error:', error);
             if (!res.headersSent) {
@@ -137,12 +133,17 @@ app.get('/api/download/:videoId', async (req, res) => {
             }
         });
         
+        audioStream.on('end', () => {
+            console.log(`✅ Download completed: ${title}`);
+        });
+        
     } catch (error) {
         console.error('❌ Download error:', error);
-        res.status(500).json({ error: 'Download failed: ' + error.message });
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Download failed: ' + error.message });
+        }
     }
 });
-
 
 // Serve main app
 app.get('/', (req, res) => {
@@ -153,8 +154,6 @@ app.get('/', (req, res) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Keyan Music - Stream Your World</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <meta name="theme-color" content="#FF6B35">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23FF6B35'/><text x='50' y='60' text-anchor='middle' fill='white' font-size='40' font-family='Arial'>K</text></svg>">
@@ -191,7 +190,6 @@ app.get('/', (req, res) => {
             font-weight: 400;
         }
 
-        /* Header */
         .header {
             background: var(--white);
             box-shadow: var(--shadow-light);
@@ -285,14 +283,12 @@ app.get('/', (req, res) => {
             font-weight: 600;
         }
 
-        /* Main Content */
         .main {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
         }
 
-        /* Hero Section */
         .hero {
             text-align: center;
             padding: 3rem 0;
@@ -311,7 +307,6 @@ app.get('/', (req, res) => {
             margin-bottom: 2rem;
         }
 
-        /* Search */
         .search-container {
             max-width: 600px;
             margin: 0 auto 3rem;
@@ -360,7 +355,6 @@ app.get('/', (req, res) => {
             background: var(--dark-orange);
         }
 
-        /* Loading */
         .loading {
             text-align: center;
             padding: 3rem;
@@ -381,7 +375,6 @@ app.get('/', (req, res) => {
             100% { transform: rotate(360deg); }
         }
 
-        /* Results */
         .results-section {
             margin-top: 2rem;
         }
@@ -426,57 +419,6 @@ app.get('/', (req, res) => {
             object-fit: cover;
             background: var(--light-gray);
         }
-        /* Download Button */
-.download-btn {
-    width: 40px;
-    height: 40px;
-    background: #28a745;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    transition: all 0.2s ease;
-    margin-right: 10px;
-}
-
-.download-btn:hover {
-    background: #218838;
-    transform: scale(1.05);
-}
-
-/* Download Notifications */
-.download-notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 10000;
-    padding: 15px 20px;
-    border-radius: 8px;
-    color: white;
-    font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    animation: slideInRight 0.3s ease;
-}
-
-.download-notification.info { background: #17a2b8; }
-.download-notification.success { background: #28a745; }
-.download-notification.error { background: #dc3545; }
-
-.notification-content {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-@keyframes slideInRight {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
 
         .song-info {
             flex: 1;
@@ -504,6 +446,55 @@ app.get('/', (req, res) => {
             margin-right: 1rem;
         }
 
+        .download-btn {
+            width: 40px;
+            height: 40px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            margin-right: 10px;
+        }
+
+        .download-btn:hover {
+            background: #218838;
+            transform: scale(1.05);
+        }
+
+        .download-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: slideInRight 0.3s ease;
+        }
+
+        .download-notification.info { background: #17a2b8; }
+        .download-notification.success { background: #28a745; }
+        .download-notification.error { background: #dc3545; }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
         .play-btn {
             width: 48px;
             height: 48px;
@@ -524,11 +515,6 @@ app.get('/', (req, res) => {
             transform: scale(1.05);
         }
 
-        .play-btn.playing {
-            background: var(--dark-orange);
-        }
-
-        /* Features */
         .features {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -568,7 +554,6 @@ app.get('/', (req, res) => {
             font-size: 14px;
         }
 
-        /* Player */
         .player {
             position: fixed;
             bottom: 0;
@@ -679,12 +664,10 @@ app.get('/', (req, res) => {
             accent-color: var(--primary-orange);
         }
 
-        /* Utilities */
         .hidden {
             display: none !important;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .header-content {
                 flex-wrap: wrap;
@@ -715,7 +698,6 @@ app.get('/', (req, res) => {
 </head>
 <body>
     <div id="app">
-        <!-- Header -->
         <header class="header">
             <div class="header-content">
                 <div class="logo">
@@ -727,7 +709,9 @@ app.get('/', (req, res) => {
                 </div>
                 <nav class="nav">
                     <a href="#" class="nav-item active">Home</a>
-             
+                    <a href="#" class="nav-item">Browse</a>
+                    <a href="#" class="nav-item">Library</a>
+                    <a href="#" class="nav-item">Playlists</a>
                 </nav>
                 <div class="user-info">
                     <div class="user-avatar">K</div>
@@ -736,9 +720,7 @@ app.get('/', (req, res) => {
             </div>
         </header>
 
-        <!-- Main Content -->
         <main class="main">
-            <!-- Hero Section -->
             <section class="hero">
                 <h2>Discover Your Next Favorite Song</h2>
                 <p>Millions of tracks at your fingertips</p>
@@ -753,13 +735,11 @@ app.get('/', (req, res) => {
                 </div>
             </section>
 
-            <!-- Loading -->
             <div id="loading" class="loading hidden">
                 <div class="spinner"></div>
                 <p>Finding your music...</p>
             </div>
 
-            <!-- Results -->
             <section id="resultsSection" class="results-section hidden">
                 <div class="results-header">
                     <h3>Search Results</h3>
@@ -767,7 +747,6 @@ app.get('/', (req, res) => {
                 <div id="songsList" class="songs-list"></div>
             </section>
 
-            <!-- Features -->
             <section id="featuresSection" class="features">
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -779,10 +758,10 @@ app.get('/', (req, res) => {
                 
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <i class="fas fa-brain"></i>
+                        <i class="fas fa-download"></i>
                     </div>
-                    <h3>Smart Discovery</h3>
-                    <p>Find new music tailored to your taste</p>
+                    <h3>Download Music</h3>
+                    <p>Download your favorite songs as MP3 files</p>
                 </div>
                 
                 <div class="feature-card">
@@ -803,7 +782,6 @@ app.get('/', (req, res) => {
             </section>
         </main>
 
-        <!-- Player -->
         <div class="player" id="player">
             <div class="player-info">
                 <img id="playerThumbnail" src="" alt="" class="player-thumbnail">
@@ -834,7 +812,6 @@ app.get('/', (req, res) => {
         </div>
     </div>
 
-    <!-- YouTube Player -->
     <div id="youtube-player-container" style="position: absolute; left: -9999px; width: 1px; height: 1px;">
         <div id="youtube-player"></div>
     </div>
@@ -886,9 +863,13 @@ app.get('/', (req, res) => {
                             'onReady': () => {
                                 this.isPlayerReady = true;
                                 this.youtubePlayer.setVolume(50);
+                                console.log('✅ YouTube Player Ready');
                             },
                             'onStateChange': (event) => this.onPlayerStateChange(event),
-                            'onError': () => this.nextSong()
+                            'onError': (error) => {
+                                console.error('❌ YouTube Player Error:', error);
+                                this.nextSong();
+                            }
                         }
                     });
                 };
@@ -928,15 +909,24 @@ app.get('/', (req, res) => {
                 this.showLoading();
                 
                 try {
-                    const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=20`);
-
+                    console.log('🔍 Searching for:', query);
+                    const response = await fetch(\`/api/search?q=\${encodeURIComponent(query)}&limit=20\`);
+                    
+                    if (!response.ok) {
+                        throw new Error(\`Search failed: \${response.status}\`);
+                    }
+                    
                     const songs = await response.json();
                     
-                    if (songs.error) throw new Error(songs.message);
+                    if (songs.error) {
+                        throw new Error(songs.message || songs.error);
+                    }
                     
+                    console.log('✅ Search results:', songs.length, 'songs');
                     this.displayResults(songs);
                 } catch (error) {
-                    alert('Search failed: ' + error.message);
+                    console.error('❌ Search error:', error);
+                    this.showDownloadStatus('Search failed: ' + error.message, 'error');
                 } finally {
                     this.hideLoading();
                 }
@@ -955,41 +945,88 @@ app.get('/', (req, res) => {
                 });
             }
             
-           createSongElement(song, index) {
-    const songDiv = document.createElement('div');
-    songDiv.className = 'song-item';
-    songDiv.addEventListener('click', () => this.playSong(index));
-    
-    songDiv.innerHTML = `
-        <img src="${song.thumbnail || ''}" alt="${song.title}" class="song-thumbnail" 
-             onerror="this.style.background='#FF6B35'; this.src='';">
-        <div class="song-info">
-            <div class="song-title">${this.truncateText(song.title, 50)}</div>
-            <div class="song-artist">${song.artist}</div>
-        </div>
-        <div class="song-duration">${this.formatDuration(song.duration)}</div>
-        
-        <!-- Download Button -->
-        <button class="download-btn" onclick="event.stopPropagation(); app.downloadSong(${index})" title="Download MP3">
-            <i class="fas fa-download"></i>
-        </button>
-        
-        <button class="play-btn" onclick="event.stopPropagation(); app.playSong(${index})">
-            <i class="fas fa-play"></i>
-        </button>
-    `;
-    
-    return songDiv;
-}
-
+            createSongElement(song, index) {
+                const songDiv = document.createElement('div');
+                songDiv.className = 'song-item';
+                songDiv.addEventListener('click', () => this.playSong(index));
+                
+                songDiv.innerHTML = \`
+                    <img src="\${song.thumbnail || ''}" alt="\${song.title}" class="song-thumbnail" 
+                         onerror="this.style.background='#FF6B35'; this.src='';">
+                    <div class="song-info">
+                        <div class="song-title">\${this.truncateText(song.title, 50)}</div>
+                        <div class="song-artist">\${song.artist}</div>
+                    </div>
+                    <div class="song-duration">\${this.formatDuration(song.duration)}</div>
+                    
+                    <button class="download-btn" onclick="event.stopPropagation(); app.downloadSong(\${index})" title="Download MP3">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    
+                    <button class="play-btn" onclick="event.stopPropagation(); app.playSong(\${index})">
+                        <i class="fas fa-play"></i>
+                    </button>
+                \`;
+                
+                return songDiv;
+            }
+            
+            async downloadSong(index) {
+                const song = this.currentPlaylist[index];
+                if (!song || !song.videoId) return;
+                
+                try {
+                    this.showDownloadStatus('Starting download...', 'info');
+                    
+                    const downloadUrl = \`/api/download/\${song.videoId}\`;
+                    
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = \`\${song.title} - \${song.artist}.mp3\`;
+                    link.style.display = 'none';
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    this.showDownloadStatus('Download started successfully!', 'success');
+                    
+                } catch (error) {
+                    console.error('❌ Download failed:', error);
+                    this.showDownloadStatus('Download failed. Please try again.', 'error');
+                }
+            }
+            
+            showDownloadStatus(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = \`download-notification \${type}\`;
+                notification.innerHTML = \`
+                    <div class="notification-content">
+                        <i class="fas fa-\${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                        <span>\${message}</span>
+                    </div>
+                \`;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 4000);
+            }
             
             async playSong(index) {
-                if (!this.isPlayerReady) return;
+                if (!this.isPlayerReady) {
+                    console.log('⏳ Player not ready yet');
+                    return;
+                }
                 
                 this.currentIndex = index;
                 this.currentSong = this.currentPlaylist[index];
                 
                 try {
+                    console.log('🎵 Playing:', this.currentSong.title);
                     this.youtubePlayer.loadVideoById(this.currentSong.videoId);
                     this.updatePlayerDisplay();
                     
@@ -999,6 +1036,7 @@ app.get('/', (req, res) => {
                         }
                     }, 1000);
                 } catch (error) {
+                    console.error('❌ Play error:', error);
                     this.nextSong();
                 }
             }
@@ -1013,58 +1051,7 @@ app.get('/', (req, res) => {
                     this.playerThumbnail.src = this.currentSong.thumbnail;
                 }
             }
-            // Add these methods to your existing KeyanMusicApp class
-
-async downloadSong(index) {
-    const song = this.currentPlaylist[index];
-    if (!song || !song.videoId) return;
-    
-    try {
-        // Show download starting notification
-        this.showDownloadStatus('Starting download...', 'info');
-        
-        // Create download link
-        const downloadUrl = `/api/download/${song.videoId}`;
-        
-        // Create temporary anchor for download
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = `${song.title} - ${song.artist}.mp3`;
-        link.style.display = 'none';
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Show success message
-        this.showDownloadStatus('Download started successfully!', 'success');
-        
-    } catch (error) {
-        console.error('Download failed:', error);
-        this.showDownloadStatus('Download failed. Please try again.', 'error');
-    }
-}
-
-showDownloadStatus(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `download-notification ${type}`;
-    notification.innerHTML = `
-        <div class="notification-content">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-            <span>${message}</span>
-        </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Auto remove after 3 seconds
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.remove();
-        }
-    }, 3000);
-}
-
+            
             togglePlay() {
                 if (!this.isPlayerReady) return;
                 
@@ -1125,6 +1112,7 @@ showDownloadStatus(message, type = 'info') {
             }
             
             truncateText(text, maxLength) {
+                if (!text) return 'Unknown';
                 return text.length > maxLength ? 
                     text.substring(0, maxLength) + '...' : 
                     text;
@@ -1140,10 +1128,9 @@ showDownloadStatus(message, type = 'info') {
             }
         }
 
-        // Initialize the app
         window.app = new KeyanMusicApp();
+        console.log('🎵 Keyan Music App Initialized');
 
-        // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT') return;
             
@@ -1157,20 +1144,33 @@ showDownloadStatus(message, type = 'info') {
 </html>`);
 });
 
+// Error handling middleware
+app.use((error, req, res, next) => {
+    console.error('❌ Server error:', error);
+    res.status(500).json({ 
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+    });
+});
+
+// Handle 404s
+app.use((req, res) => {
+    res.status(404).json({ error: 'Route not found' });
+});
+
 // Initialize YTMusic on startup
 setTimeout(() => {
-    initializeYTMusic().catch(console.error);
+    initializeYTMusic().catch(err => {
+        console.error('❌ Background initialization failed:', err);
+    });
 }, 1000);
 
-// For Vercel
+// Export for Vercel
 export default app;
 
-// For local development
+// Local development
 if (process.env.NODE_ENV !== 'production') {
     app.listen(port, () => {
         console.log(`🎵 Keyan Music server running at http://localhost:${port}`);
     });
 }
-
-
-
