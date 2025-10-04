@@ -704,25 +704,46 @@ app.get('/', (req, res) => {
                 return songDiv;
             }
             
-            async downloadSong(index) {
-                const song = this.currentPlaylist[index];
-                if (!song) return;
-                
-                try {
-                    this.showNotification('Starting download...', 'info');
-                    
-                    const link = document.createElement('a');
-                    link.href = '/api/download/' + song.videoId;
-                    link.download = song.title + ' - ' + song.artist + '.mp3';
-                    link.click();
-                    
-                    this.showNotification('Download started! Check your downloads folder.', 'success');
-                    
-                } catch (error) {
-                    console.error('Download error:', error);
-                    this.showNotification('Download failed. Please try again.', 'error');
-                }
-            }
+            /**
+ * Initiates the download of a song by creating and clicking an invisible link.
+ * This is the standard browser method for triggering a file download via JavaScript.
+ */
+async function downloadSong(index) {
+    const song = this.currentPlaylist[index];
+    if (!song) {
+        console.error('No song data found for this index.');
+        return;
+    }
+
+    // Give immediate feedback to the user
+    this.showNotification(`Starting download for "${song.title}"...`, 'info');
+
+    try {
+        // The URL of our backend download route
+        const downloadUrl = `/api/download/${song.videoId}`;
+
+        // Create an invisible anchor element
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `${song.title}.mp3`; // This is a fallback filename suggestion
+
+        // Add the link to the page, "click" it, and then remove it
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Let the user know the process has started
+        // This runs after a short delay to feel more natural
+        setTimeout(() => {
+            this.showNotification('Your download should begin shortly!', 'success');
+        }, 1500);
+
+    } catch (error) {
+        console.error('Failed to initiate download:', error);
+        this.showNotification('Could not start the download. Please try again.', 'error');
+    }
+}
+
             
             async playSong(index) {
                 this.currentIndex = index;
@@ -865,5 +886,6 @@ if (process.env.NODE_ENV !== 'production') {
         console.log(`🎵 Keyan Music server running at http://localhost:${port}`);
     });
 }
+
 
 
