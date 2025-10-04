@@ -627,9 +627,7 @@ app.get('/', (req, res) => {
                 </div>
                 <nav class="nav">
                     <a href="#" class="nav-item active">Home</a>
-                    <a href="#" class="nav-item">Browse</a>
-                    <a href="#" class="nav-item">Library</a>
-                    <a href="#" class="nav-item">Playlists</a>
+             
                 </nav>
                 <div class="user-info">
                     <div class="user-avatar">K</div>
@@ -1014,3 +1012,4 @@ if (process.env.NODE_ENV !== 'production') {
         console.log(`🎵 Keyan Music server running at http://localhost:${port}`);
     });
 }
+
