@@ -1,4 +1,4 @@
-// Keyan Music - Complete Clean & Simple Server (FIXED)
+// Keyan Music - COMPLETE Professional Server with ALL Features
 import express from 'express';
 import cors from 'cors';
 import YTMusic from 'ytmusic-api';
@@ -66,7 +66,7 @@ app.get('/api/search', async (req, res) => {
             return res.status(400).json({ error: 'Search query is required' });
         }
         
-        console.log(`🔍 API Search: "${query}"`);
+        console.log('🔍 API Search:', query);
         
         const ytm = await initializeYTMusic();
         const results = await ytm.search(query);
@@ -83,7 +83,7 @@ app.get('/api/search', async (req, res) => {
             type: song.type
         }));
         
-        console.log(`📚 Found ${songs.length} songs`);
+        console.log('📚 Found', songs.length, 'songs');
         res.json(songs);
     } catch (error) {
         console.error('❌ Search error:', error);
@@ -94,26 +94,26 @@ app.get('/api/search', async (req, res) => {
     }
 });
 
-// Download route
-// 🎵 PROFESSIONAL SOLUTION: Replace your download route with this
-// 🎵 WORKING DOWNLOAD SOLUTION
+// Professional Download API
 app.get('/api/download/:videoId', async (req, res) => {
     try {
         const videoId = req.params.videoId;
         
-        console.log('🔍 Download request for:', videoId);
+        console.log('📥 Download request for:', videoId);
         
-        // Professional response instead of trying ytdl-core
+        // Professional response with better messaging
         res.status(200).json({
             success: false,
-            message: 'Download feature is coming soon! 🎵',
-            suggestion: 'You can stream this song by clicking the play button',
+            message: 'Download feature coming soon! 🎵',
+            suggestion: 'Enjoy unlimited streaming by clicking the play button',
             feature_status: 'under_development',
             alternatives: {
-                streaming: 'Available now - click play button',
+                streaming: 'Available now - crystal clear audio',
                 playlist: 'Create playlists (coming soon)',
-                favorites: 'Add to favorites (coming soon)'
-            }
+                favorites: 'Add to favorites (coming soon)',
+                offline: 'Offline mode (coming soon)'
+            },
+            eta: 'Downloads will be available in the next update'
         });
         
         console.log('✅ Professional download response sent');
@@ -128,13 +128,9 @@ app.get('/api/download/:videoId', async (req, res) => {
     }
 });
 
-
-
-
-
-// Serve main app
+// Serve main app with COMPLETE features
 app.get('/', (req, res) => {
-    res.send(`<!DOCTYPE html>
+    const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -146,7 +142,6 @@ app.get('/', (req, res) => {
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23FF6B35'/><text x='50' y='60' text-anchor='middle' fill='white' font-size='40' font-family='Arial'>K</text></svg>">
     
     <style>
-        /* Clean & Simple Keyan Music Styles */
         * {
             margin: 0;
             padding: 0;
@@ -160,6 +155,7 @@ app.get('/', (req, res) => {
             --white: #FFFFFF;
             --light-gray: #F8F9FA;
             --medium-gray: #E9ECEF;
+            --dark-gray: #6C757D;
             --text-dark: #2D3748;
             --text-medium: #4A5568;
             --text-light: #718096;
@@ -175,6 +171,7 @@ app.get('/', (req, res) => {
             color: var(--text-dark);
             line-height: 1.6;
             font-weight: 400;
+            padding-bottom: 120px;
         }
 
         .header {
@@ -433,10 +430,11 @@ app.get('/', (req, res) => {
             margin-right: 1rem;
         }
 
+        /* Enhanced Download Button */
         .download-btn {
             width: 40px;
             height: 40px;
-            background: #28a745;
+            background: linear-gradient(135deg, #28a745, #20c997);
             color: white;
             border: none;
             border-radius: 50%;
@@ -445,15 +443,22 @@ app.get('/', (req, res) => {
             align-items: center;
             justify-content: center;
             font-size: 16px;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             margin-right: 10px;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
         }
 
         .download-btn:hover {
-            background: #218838;
-            transform: scale(1.05);
+            background: linear-gradient(135deg, #218838, #1abc9c);
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
         }
 
+        .download-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Enhanced Notifications */
         .download-notification {
             position: fixed;
             top: 20px;
@@ -467,9 +472,15 @@ app.get('/', (req, res) => {
             animation: slideInRight 0.3s ease;
         }
 
-        .download-notification.info { background: #17a2b8; }
-        .download-notification.success { background: #28a745; }
-        .download-notification.error { background: #dc3545; }
+        .download-notification.info { 
+            background: linear-gradient(135deg, #17a2b8, #6f42c1); 
+        }
+        .download-notification.success { 
+            background: linear-gradient(135deg, #28a745, #20c997); 
+        }
+        .download-notification.error { 
+            background: linear-gradient(135deg, #dc3545, #e83e8c); 
+        }
 
         .notification-content {
             display: flex;
@@ -541,6 +552,7 @@ app.get('/', (req, res) => {
             font-size: 14px;
         }
 
+        /* ENHANCED MUSIC PLAYER WITH TIMER */
         .player {
             position: fixed;
             bottom: 0;
@@ -549,12 +561,21 @@ app.get('/', (req, res) => {
             background: var(--white);
             border-top: 1px solid var(--medium-gray);
             padding: 1rem 2rem;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .player-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .player-main {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 2rem;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            z-index: 1000;
+            margin-bottom: 0.5rem;
         }
 
         .player-info {
@@ -651,6 +672,55 @@ app.get('/', (req, res) => {
             accent-color: var(--primary-orange);
         }
 
+        /* PROGRESS BAR AND TIMER */
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .time-display {
+            font-size: 12px;
+            color: var(--text-medium);
+            min-width: 45px;
+            text-align: center;
+        }
+
+        .progress-bar-container {
+            flex: 1;
+            position: relative;
+            height: 6px;
+            background: var(--medium-gray);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--primary-orange);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        .progress-handle {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            background: var(--primary-orange);
+            border-radius: 50%;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .progress-bar-container:hover .progress-handle {
+            opacity: 1;
+        }
+
         .hidden {
             display: none !important;
         }
@@ -669,16 +739,20 @@ app.get('/', (req, res) => {
             
             .main {
                 padding: 1rem;
-                padding-bottom: 100px;
+                padding-bottom: 140px;
             }
             
-            .player {
+            .player-main {
                 flex-wrap: wrap;
                 gap: 1rem;
             }
             
             .player-extras {
                 display: none;
+            }
+
+            .progress-container {
+                margin-top: 1rem;
             }
         }
     </style>
@@ -748,7 +822,7 @@ app.get('/', (req, res) => {
                         <i class="fas fa-download"></i>
                     </div>
                     <h3>Download Music</h3>
-                    <p>Download your favorite songs as MP3 files</p>
+                    <p>Download your favorite songs as MP3 files (Coming Soon)</p>
                 </div>
                 
                 <div class="feature-card">
@@ -769,31 +843,46 @@ app.get('/', (req, res) => {
             </section>
         </main>
 
+        <!-- ENHANCED PLAYER WITH TIMER -->
         <div class="player" id="player">
-            <div class="player-info">
-                <img id="playerThumbnail" src="" alt="" class="player-thumbnail">
-                <div class="player-details">
-                    <div id="playerTitle" class="player-title">Select a song to play</div>
-                    <div id="playerArtist" class="player-artist">Choose from millions of tracks</div>
+            <div class="player-content">
+                <div class="player-main">
+                    <div class="player-info">
+                        <img id="playerThumbnail" src="" alt="" class="player-thumbnail">
+                        <div class="player-details">
+                            <div id="playerTitle" class="player-title">Select a song to play</div>
+                            <div id="playerArtist" class="player-artist">Choose from millions of tracks</div>
+                        </div>
+                    </div>
+
+                    <div class="player-controls">
+                        <button id="prevBtn" class="control-btn">
+                            <i class="fas fa-step-backward"></i>
+                        </button>
+                        <button id="playBtn" class="control-btn primary">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button id="nextBtn" class="control-btn">
+                            <i class="fas fa-step-forward"></i>
+                        </button>
+                    </div>
+
+                    <div class="player-extras">
+                        <div class="volume-control">
+                            <i class="fas fa-volume-up"></i>
+                            <input type="range" id="volumeSlider" min="0" max="100" value="50" class="volume-slider">
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="player-controls">
-                <button id="prevBtn" class="control-btn">
-                    <i class="fas fa-step-backward"></i>
-                </button>
-                <button id="playBtn" class="control-btn primary">
-                    <i class="fas fa-play"></i>
-                </button>
-                <button id="nextBtn" class="control-btn">
-                    <i class="fas fa-step-forward"></i>
-                </button>
-            </div>
-
-            <div class="player-extras">
-                <div class="volume-control">
-                    <i class="fas fa-volume-up"></i>
-                    <input type="range" id="volumeSlider" min="0" max="100" value="50" class="volume-slider">
+                <!-- PROGRESS BAR WITH TIMER -->
+                <div class="progress-container">
+                    <div id="currentTime" class="time-display">0:00</div>
+                    <div class="progress-bar-container" id="progressContainer">
+                        <div class="progress-bar" id="progressBar"></div>
+                        <div class="progress-handle" id="progressHandle"></div>
+                    </div>
+                    <div id="totalTime" class="time-display">0:00</div>
                 </div>
             </div>
         </div>
@@ -813,10 +902,14 @@ app.get('/', (req, res) => {
                 this.currentSong = null;
                 this.youtubePlayer = null;
                 this.isPlayerReady = false;
+                this.currentTime = 0;
+                this.duration = 0;
+                this.progressInterval = null;
                 
                 this.initializeElements();
                 this.bindEvents();
                 this.initializeYouTubePlayer();
+                this.startProgressTracking();
             }
             
             initializeElements() {
@@ -833,6 +926,13 @@ app.get('/', (req, res) => {
                 this.prevBtn = document.getElementById('prevBtn');
                 this.nextBtn = document.getElementById('nextBtn');
                 this.volumeSlider = document.getElementById('volumeSlider');
+                
+                // Progress elements
+                this.progressContainer = document.getElementById('progressContainer');
+                this.progressBar = document.getElementById('progressBar');
+                this.progressHandle = document.getElementById('progressHandle');
+                this.currentTimeDisplay = document.getElementById('currentTime');
+                this.totalTimeDisplay = document.getElementById('totalTime');
             }
             
             initializeYouTubePlayer() {
@@ -850,7 +950,7 @@ app.get('/', (req, res) => {
                             'onReady': () => {
                                 this.isPlayerReady = true;
                                 this.youtubePlayer.setVolume(50);
-                                console.log('✅ YouTube Player Ready');
+                                console.log('✅ YouTube Player Ready with Progress Tracking');
                             },
                             'onStateChange': (event) => this.onPlayerStateChange(event),
                             'onError': (error) => {
@@ -865,11 +965,53 @@ app.get('/', (req, res) => {
             onPlayerStateChange(event) {
                 if (event.data === YT.PlayerState.PLAYING) {
                     this.setPlayingState(true);
+                    this.updateDuration();
                 } else if (event.data === YT.PlayerState.PAUSED) {
                     this.setPlayingState(false);
                 } else if (event.data === YT.PlayerState.ENDED) {
                     this.nextSong();
                 }
+            }
+            
+            // PROGRESS TRACKING SYSTEM
+            startProgressTracking() {
+                this.progressInterval = setInterval(() => {
+                    if (this.isPlayerReady && this.youtubePlayer && this.isPlaying) {
+                        try {
+                            this.currentTime = this.youtubePlayer.getCurrentTime();
+                            this.updateProgressBar();
+                        } catch (e) {
+                            // Handle error silently
+                        }
+                    }
+                }, 1000);
+            }
+            
+            updateDuration() {
+                if (this.isPlayerReady && this.youtubePlayer) {
+                    try {
+                        this.duration = this.youtubePlayer.getDuration();
+                        this.totalTimeDisplay.textContent = this.formatTime(this.duration);
+                    } catch (e) {
+                        this.totalTimeDisplay.textContent = '0:00';
+                    }
+                }
+            }
+            
+            updateProgressBar() {
+                if (this.duration > 0) {
+                    const progressPercent = (this.currentTime / this.duration) * 100;
+                    this.progressBar.style.width = progressPercent + '%';
+                    this.progressHandle.style.left = progressPercent + '%';
+                    this.currentTimeDisplay.textContent = this.formatTime(this.currentTime);
+                }
+            }
+            
+            formatTime(seconds) {
+                if (isNaN(seconds) || seconds < 0) return '0:00';
+                const minutes = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return minutes + ':' + (secs < 10 ? '0' : '') + secs;
             }
             
             bindEvents() {
@@ -887,6 +1029,20 @@ app.get('/', (req, res) => {
                         this.youtubePlayer.setVolume(e.target.value);
                     }
                 });
+                
+                // Progress bar seeking
+                this.progressContainer.addEventListener('click', (e) => {
+                    if (this.isPlayerReady && this.youtubePlayer && this.duration > 0) {
+                        const rect = this.progressContainer.getBoundingClientRect();
+                        const clickX = e.clientX - rect.left;
+                        const progressPercent = clickX / rect.width;
+                        const seekTime = progressPercent * this.duration;
+                        
+                        this.youtubePlayer.seekTo(seekTime);
+                        this.currentTime = seekTime;
+                        this.updateProgressBar();
+                    }
+                });
             }
             
             async performSearch() {
@@ -897,10 +1053,11 @@ app.get('/', (req, res) => {
                 
                 try {
                     console.log('🔍 Searching for:', query);
-                    const response = await fetch(\`/api/search?q=\${encodeURIComponent(query)}&limit=20\`);
+                    const searchUrl = '/api/search?q=' + encodeURIComponent(query) + '&limit=20';
+                    const response = await fetch(searchUrl);
                     
                     if (!response.ok) {
-                        throw new Error(\`Search failed: \${response.status}\`);
+                        throw new Error('Search failed: ' + response.status);
                     }
                     
                     const songs = await response.json();
@@ -937,79 +1094,79 @@ app.get('/', (req, res) => {
                 songDiv.className = 'song-item';
                 songDiv.addEventListener('click', () => this.playSong(index));
                 
-                songDiv.innerHTML = \`
-                    <img src="\${song.thumbnail || ''}" alt="\${song.title}" class="song-thumbnail" 
-                         onerror="this.style.background='#FF6B35'; this.src='';">
-                    <div class="song-info">
-                        <div class="song-title">\${this.truncateText(song.title, 50)}</div>
-                        <div class="song-artist">\${song.artist}</div>
-                    </div>
-                    <div class="song-duration">\${this.formatDuration(song.duration)}</div>
+                const songHtml = 
+                    '<img src="' + (song.thumbnail || '') + '" alt="' + song.title + '" class="song-thumbnail" ' +
+                         'onerror="this.style.background=\\'#FF6B35\\'; this.src=\\'\\';"> ' +
+                    '<div class="song-info"> ' +
+                        '<div class="song-title">' + this.truncateText(song.title, 50) + '</div> ' +
+                        '<div class="song-artist">' + song.artist + '</div> ' +
+                    '</div> ' +
+                    '<div class="song-duration">' + this.formatDuration(song.duration) + '</div> ' +
+                    '<button class="download-btn" onclick="event.stopPropagation(); app.downloadSong(' + index + ')" title="Download MP3 (Coming Soon)"> ' +
+                        '<i class="fas fa-download"></i> ' +
+                    '</button> ' +
+                    '<button class="play-btn" onclick="event.stopPropagation(); app.playSong(' + index + ')"> ' +
+                        '<i class="fas fa-play"></i> ' +
+                    '</button>';
                     
-                    <button class="download-btn" onclick="event.stopPropagation(); app.downloadSong(\${index})" title="Download MP3">
-                        <i class="fas fa-download"></i>
-                    </button>
-                    
-                    <button class="play-btn" onclick="event.stopPropagation(); app.playSong(\${index})">
-                        <i class="fas fa-play"></i>
-                    </button>
-                \`;
+                songDiv.innerHTML = songHtml;
                 
                 return songDiv;
             }
             
-    async downloadSong(index) {
-    const song = this.currentPlaylist[index];
-    if (!song || !song.videoId) return;
-    
-    console.log('🔍 Download requested for:', song.title);
-    
-    try {
-        // Show initial message
-        this.showDownloadStatus('Checking download availability...', 'info');
-        
-        // Call the download API
-        const response = await fetch('/api/download/' + song.videoId);
-        const data = await response.json();
-        
-        console.log('📡 Download response:', data);
-        
-        if (data.success) {
-            // If download works (future)
-            this.showDownloadStatus('Download started!', 'success');
-        } else {
-            // Show professional message
-            this.showDownloadStatus(data.message, 'info');
+            async downloadSong(index) {
+                const song = this.currentPlaylist[index];
+                if (!song || !song.videoId) return;
+                
+                console.log('🔍 Download requested for:', song.title);
+                
+                try {
+                    this.showDownloadStatus('Checking download availability...', 'info');
+                    
+                    const response = await fetch('/api/download/' + song.videoId);
+                    const data = await response.json();
+                    
+                    console.log('📡 Download response:', data);
+                    
+                    if (data.success) {
+                        this.showDownloadStatus('Download started!', 'success');
+                    } else {
+                        this.showDownloadStatus(data.message, 'info');
+                        
+                        setTimeout(() => {
+                            this.showDownloadStatus(
+                                '🎵 Click the orange play button to stream this song!', 
+                                'success'
+                            );
+                        }, 3000);
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Download error:', error);
+                    this.showDownloadStatus(
+                        'Download unavailable. Stream this song by clicking play!', 
+                        'info'
+                    );
+                }
+            }
             
-            // Show play suggestion after 3 seconds
-            setTimeout(() => {
-                this.showDownloadStatus(
-                    '🎵 Click the orange play button to stream this song!', 
-                    'success'
-                );
-            }, 3000);
-        }
-        
-    } catch (error) {
-        console.error('❌ Download error:', error);
-        this.showDownloadStatus(
-            'Download unavailable. Stream this song by clicking play!', 
-            'info'
-        );
-    }
-}
-
-
-            
-            showDownloadStatus(message, type = 'info') {
+            showDownloadStatus(message, type) {
+                console.log('📢 Notification:', message, type);
+                
+                document.querySelectorAll('.download-notification').forEach(n => n.remove());
+                
                 const notification = document.createElement('div');
-                notification.className = \`download-notification \${type}\`;
-                notification.innerHTML = \`
-                    <div class="notification-content">
-                        <i class="fas fa-\${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-                        <span>\${message}</span>
-                    </div>
-                \`;
+                notification.className = 'download-notification ' + (type || 'info');
+                
+                let iconClass = 'info-circle';
+                if (type === 'success') iconClass = 'check-circle';
+                if (type === 'error') iconClass = 'exclamation-circle';
+                
+                notification.innerHTML = 
+                    '<div class="notification-content">' +
+                        '<i class="fas fa-' + iconClass + '"></i>' +
+                        '<span>' + message + '</span>' +
+                    '</div>';
                 
                 document.body.appendChild(notification);
                 
@@ -1033,6 +1190,7 @@ app.get('/', (req, res) => {
                     console.log('🎵 Playing:', this.currentSong.title);
                     this.youtubePlayer.loadVideoById(this.currentSong.videoId);
                     this.updatePlayerDisplay();
+                    this.resetProgress();
                     
                     setTimeout(() => {
                         if (this.youtubePlayer && this.youtubePlayer.playVideo) {
@@ -1043,6 +1201,15 @@ app.get('/', (req, res) => {
                     console.error('❌ Play error:', error);
                     this.nextSong();
                 }
+            }
+            
+            resetProgress() {
+                this.currentTime = 0;
+                this.duration = 0;
+                this.progressBar.style.width = '0%';
+                this.progressHandle.style.left = '0%';
+                this.currentTimeDisplay.textContent = '0:00';
+                this.totalTimeDisplay.textContent = '0:00';
             }
             
             updatePlayerDisplay() {
@@ -1128,12 +1295,12 @@ app.get('/', (req, res) => {
                 
                 const minutes = Math.floor(duration / 60);
                 const seconds = duration % 60;
-                return \`\${minutes}:\${seconds.toString().padStart(2, '0')}\`;
+                return minutes + ':' + seconds.toString().padStart(2, '0');
             }
         }
 
         window.app = new KeyanMusicApp();
-        console.log('🎵 Keyan Music App Initialized');
+        console.log('🎵 Keyan Music App Initialized with Enhanced Features');
 
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT') return;
@@ -1145,7 +1312,9 @@ app.get('/', (req, res) => {
         });
     </script>
 </body>
-</html>`);
+</html>`;
+    
+    res.send(htmlContent);
 });
 
 // Error handling middleware
@@ -1175,11 +1344,6 @@ export default app;
 // Local development
 if (process.env.NODE_ENV !== 'production') {
     app.listen(port, () => {
-        console.log(`🎵 Keyan Music server running at http://localhost:${port}`);
+        console.log('🎵 Keyan Music server running at http://localhost:' + port);
     });
 }
-
-
-
-
-
