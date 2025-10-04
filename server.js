@@ -4,6 +4,8 @@ import cors from 'cors';
 import YTMusic from 'ytmusic-api';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import ytdl from 'ytdl-core';  // Add this line
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -94,6 +96,53 @@ app.get('/api/search', async (req, res) => {
         });
     }
 });
+// Download route - Add this to your server.js
+app.get('/api/download/:videoId', async (req, res) => {
+    try {
+        const videoId = req.params.videoId;
+        const videoURL = `https://youtube.com/watch?v=${videoId}`;
+        
+        // Validate video ID
+        if (!ytdl.validateURL(videoURL)) {
+            return res.status(400).json({ error: 'Invalid video URL' });
+        }
+        
+        // Get video info first
+        const info = await ytdl.getInfo(videoURL);
+        const title = info.videoDetails.title.replace(/[^\w\s]/gi, ''); // Clean filename
+        
+        // Download audio stream
+        const audioStream = ytdl(videoURL, { 
+            quality: 'highestaudio',
+            filter: 'audioonly'
+        });
+        
+        // Set headers for download
+        res.set({
+            'Content-Type': 'audio/mpeg',
+            'Content-Disposition': `attachment; filename="${title}.mp3"`,
+            'Access-Control-Allow-Origin': '*'
+        });
+        
+        console.log(`📥 Downloading: ${title}`);
+        
+        // Stream the audio to user
+        audioStream.pipe(res);
+        
+        // Handle stream errors
+        audioStream.on('error', (error) => {
+            console.error('❌ Download stream error:', error);
+            if (!res.headersSent) {
+                res.status(500).json({ error: 'Download failed' });
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Download error:', error);
+        res.status(500).json({ error: 'Download failed: ' + error.message });
+    }
+});
+
 
 // Serve main app
 app.get('/', (req, res) => {
@@ -377,6 +426,57 @@ app.get('/', (req, res) => {
             object-fit: cover;
             background: var(--light-gray);
         }
+        /* Download Button */
+.download-btn {
+    width: 40px;
+    height: 40px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    margin-right: 10px;
+}
+
+.download-btn:hover {
+    background: #218838;
+    transform: scale(1.05);
+}
+
+/* Download Notifications */
+.download-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    padding: 15px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    animation: slideInRight 0.3s ease;
+}
+
+.download-notification.info { background: #17a2b8; }
+.download-notification.success { background: #28a745; }
+.download-notification.error { background: #dc3545; }
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
 
         .song-info {
             flex: 1;
@@ -854,26 +954,33 @@ app.get('/', (req, res) => {
                 });
             }
             
-            createSongElement(song, index) {
-                const songDiv = document.createElement('div');
-                songDiv.className = 'song-item';
-                songDiv.addEventListener('click', () => this.playSong(index));
-                
-                songDiv.innerHTML = \`
-                    <img src="\${song.thumbnail || ''}" alt="\${song.title}" class="song-thumbnail" 
-                         onerror="this.style.background='#FF6B35'; this.src='';">
-                    <div class="song-info">
-                        <div class="song-title">\${this.truncateText(song.title, 50)}</div>
-                        <div class="song-artist">\${song.artist}</div>
-                    </div>
-                    <div class="song-duration">\${this.formatDuration(song.duration)}</div>
-                    <button class="play-btn" onclick="event.stopPropagation(); app.playSong(\${index})">
-                        <i class="fas fa-play"></i>
-                    </button>
-                \`;
-                
-                return songDiv;
-            }
+           createSongElement(song, index) {
+    const songDiv = document.createElement('div');
+    songDiv.className = 'song-item';
+    songDiv.addEventListener('click', () => this.playSong(index));
+    
+    songDiv.innerHTML = `
+        <img src="${song.thumbnail || ''}" alt="${song.title}" class="song-thumbnail" 
+             onerror="this.style.background='#FF6B35'; this.src='';">
+        <div class="song-info">
+            <div class="song-title">${this.truncateText(song.title, 50)}</div>
+            <div class="song-artist">${song.artist}</div>
+        </div>
+        <div class="song-duration">${this.formatDuration(song.duration)}</div>
+        
+        <!-- Download Button -->
+        <button class="download-btn" onclick="event.stopPropagation(); app.downloadSong(${index})" title="Download MP3">
+            <i class="fas fa-download"></i>
+        </button>
+        
+        <button class="play-btn" onclick="event.stopPropagation(); app.playSong(${index})">
+            <i class="fas fa-play"></i>
+        </button>
+    `;
+    
+    return songDiv;
+}
+
             
             async playSong(index) {
                 if (!this.isPlayerReady) return;
@@ -905,7 +1012,58 @@ app.get('/', (req, res) => {
                     this.playerThumbnail.src = this.currentSong.thumbnail;
                 }
             }
-            
+            // Add these methods to your existing KeyanMusicApp class
+
+async downloadSong(index) {
+    const song = this.currentPlaylist[index];
+    if (!song || !song.videoId) return;
+    
+    try {
+        // Show download starting notification
+        this.showDownloadStatus('Starting download...', 'info');
+        
+        // Create download link
+        const downloadUrl = `/api/download/${song.videoId}`;
+        
+        // Create temporary anchor for download
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `${song.title} - ${song.artist}.mp3`;
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Show success message
+        this.showDownloadStatus('Download started successfully!', 'success');
+        
+    } catch (error) {
+        console.error('Download failed:', error);
+        this.showDownloadStatus('Download failed. Please try again.', 'error');
+    }
+}
+
+showDownloadStatus(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `download-notification ${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+
             togglePlay() {
                 if (!this.isPlayerReady) return;
                 
@@ -1012,4 +1170,5 @@ if (process.env.NODE_ENV !== 'production') {
         console.log(`🎵 Keyan Music server running at http://localhost:${port}`);
     });
 }
+
 
