@@ -10,7 +10,7 @@
     "build": "npm install"
   },
   "engines": {
-    "node": "18.x"
+    "node": "22.x"
   },
   "dependencies": {
     "ytmusic-api": "^5.4.1",
