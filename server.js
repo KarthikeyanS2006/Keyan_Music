@@ -95,162 +95,38 @@ app.get('/api/search', async (req, res) => {
 });
 
 // Download route
-// FIXED Download route - Replace the existing one in your server.js
-// 🔥 SUPER ROBUST DOWNLOAD SOLUTION
+// 🎵 PROFESSIONAL SOLUTION: Replace your download route with this
 app.get('/api/download/:videoId', async (req, res) => {
     try {
         const videoId = req.params.videoId;
-        const videoURL = 'https://youtube.com/watch?v=' + videoId;
         
-        console.log('🔥 ROBUST Download request for:', videoId);
+        console.log('📥 Download request for:', videoId);
         
-        // Step 1: Validate video ID
-        if (!videoId || videoId.length !== 11) {
-            console.error('❌ Invalid video ID:', videoId);
-            return res.status(400).json({ error: 'Invalid video ID' });
-        }
+        // Professional response for unavailable downloads
+        res.status(503).json({
+            error: 'Download Temporarily Unavailable',
+            message: 'Due to recent YouTube policy changes, downloads are currently disabled.',
+            suggestion: 'You can still stream unlimited music! 🎵',
+            status: 'coming_soon',
+            alternatives: [
+                'Stream music instantly',
+                'Create playlists',
+                'Discover new songs',
+                'Enjoy high-quality audio streaming'
+            ]
+        });
         
-        // Step 2: Add delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Step 3: Multiple attempt strategy
-        let attempts = 0;
-        const maxAttempts = 3;
-        
-        while (attempts < maxAttempts) {
-            try {
-                attempts++;
-                console.log(`🔄 Attempt ${attempts}/${maxAttempts} for video:`, videoId);
-                
-                // Get video info with enhanced configuration
-                const info = await ytdl.getInfo(videoURL, {
-                    requestOptions: {
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                            'Accept-Language': 'en-US,en;q=0.5',
-                            'Accept-Encoding': 'gzip, deflate',
-                            'Connection': 'keep-alive'
-                        },
-                        timeout: 10000
-                    }
-                });
-                
-                console.log('✅ Got video info:', info.videoDetails.title);
-                
-                // Clean title for filename
-                const title = info.videoDetails.title
-                    .replace(/[^a-zA-Z0-9 ]/g, '')
-                    .replace(/\s+/g, ' ')
-                    .trim()
-                    .substring(0, 50) || 'song';
-                
-                // Get best audio format
-                const audioFormats = ytdl.filterFormats(info.formats, 'audioonly');
-                console.log('🎵 Available audio formats:', audioFormats.length);
-                
-                if (audioFormats.length === 0) {
-                    // Try with video formats that have audio
-                    const videoWithAudio = info.formats.filter(f => f.hasAudio && f.hasVideo);
-                    if (videoWithAudio.length === 0) {
-                        throw new Error('No audio formats available');
-                    }
-                    console.log('🔄 Using video format with audio');
-                }
-                
-                // Set response headers immediately
-                res.set({
-                    'Content-Type': 'audio/mpeg',
-                    'Content-Disposition': 'attachment; filename="' + title + '.mp3"',
-                    'Access-Control-Allow-Origin': '*',
-                    'Cache-Control': 'no-cache',
-                    'Transfer-Encoding': 'chunked'
-                });
-                
-                // Create stream with enhanced options
-                const stream = ytdl(videoURL, {
-                    quality: audioFormats.length > 0 ? 'highestaudio' : 'highest',
-                    filter: audioFormats.length > 0 ? 'audioonly' : 'audioandvideo',
-                    requestOptions: {
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                            'Accept': '*/*',
-                            'Connection': 'keep-alive'
-                        },
-                        timeout: 30000
-                    },
-                    highWaterMark: 1024 * 1024 * 2 // 2MB buffer
-                });
-                
-                console.log('🚀 Starting stream for:', title);
-                
-                // Handle stream events
-                let downloadStarted = false;
-                
-                stream.on('response', () => {
-                    downloadStarted = true;
-                    console.log('📡 Stream response received');
-                });
-                
-                stream.on('data', (chunk) => {
-                    console.log('📊 Streaming chunk size:', chunk.length);
-                });
-                
-                stream.on('error', (error) => {
-                    console.error('❌ Stream error (attempt ' + attempts + '):', error.message);
-                    if (!downloadStarted && attempts < maxAttempts) {
-                        // Retry on next attempt
-                        return;
-                    }
-                    if (!res.headersSent) {
-                        res.status(500).json({ 
-                            error: 'Download failed', 
-                            details: error.message,
-                            attempt: attempts
-                        });
-                    }
-                });
-                
-                stream.on('end', () => {
-                    console.log('✅ Download completed successfully:', title);
-                });
-                
-                // Pipe to response
-                stream.pipe(res);
-                
-                // Success - break the retry loop
-                break;
-                
-            } catch (attemptError) {
-                console.error('❌ Attempt ' + attempts + ' failed:', attemptError.message);
-                
-                if (attempts >= maxAttempts) {
-                    // All attempts failed
-                    if (!res.headersSent) {
-                        return res.status(500).json({
-                            error: 'Download failed after multiple attempts',
-                            details: attemptError.message,
-                            attempts: attempts,
-                            suggestion: 'This video might be restricted or unavailable for download'
-                        });
-                    }
-                } else {
-                    // Wait before next attempt
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                }
-            }
-        }
+        console.log('ℹ️ Download request handled gracefully');
         
     } catch (error) {
         console.error('❌ Download route error:', error);
-        if (!res.headersSent) {
-            res.status(500).json({
-                error: 'Download system error',
-                message: error.message
-            });
-        }
+        res.status(503).json({
+            error: 'Service Temporarily Unavailable',
+            message: 'Download feature is under maintenance. Please try streaming instead.'
+        });
     }
 });
+
 
 
 
@@ -1283,5 +1159,6 @@ if (process.env.NODE_ENV !== 'production') {
         console.log(`🎵 Keyan Music server running at http://localhost:${port}`);
     });
 }
+
 
 
