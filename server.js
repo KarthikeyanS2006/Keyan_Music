@@ -928,7 +928,8 @@ app.get('/', (req, res) => {
                 this.showLoading();
                 
                 try {
-                    const response = await fetch(\`/api/search?q=\${encodeURIComponent(query)}&limit=20\`);
+                    const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=20`);
+
                     const songs = await response.json();
                     
                     if (songs.error) throw new Error(songs.message);
@@ -1170,5 +1171,6 @@ if (process.env.NODE_ENV !== 'production') {
         console.log(`🎵 Keyan Music server running at http://localhost:${port}`);
     });
 }
+
 
 
