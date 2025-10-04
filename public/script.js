@@ -126,30 +126,51 @@ class ViMusicApp {
         });
     }
     
-    async performSearch() {
-        const query = this.searchInput.value.trim();
-        if (!query) return;
+   async performSearch() {
+    const query = this.searchInput.value.trim();
+    if (!query) return;
+    
+    this.showLoading();
+    
+    try {
+        console.log(`🔍 Searching for: "${query}"`);
         
-        this.showLoading();
+        // Add longer timeout for production
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 seconds
         
-        try {
-          
-            const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=20`);
-            
-            if (!response.ok) {
-                throw new Error('Search failed');
-            }
-            
-            const songs = await response.json();
-            this.displayResults(songs);
-            
-        } catch (error) {
-            console.error('❌ Search error:', error);
-            this.showError('Search failed. Please try again.');
-        } finally {
-            this.hideLoading();
+        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=20`, {
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Search failed');
         }
+        
+        const songs = await response.json();
+        
+        if (songs.error) {
+            throw new Error(songs.message || songs.error);
+        }
+        
+        this.displayResults(songs);
+        
+    } catch (error) {
+        console.error('❌ Search error:', error);
+        
+        if (error.name === 'AbortError') {
+            this.showError('Search timed out. The server might be initializing. Please try again in a moment.');
+        } else {
+            this.showError(`Search failed: ${error.message}. Please try again.`);
+        }
+    } finally {
+        this.hideLoading();
     }
+}
+
     
     displayResults(songs) {
         this.currentPlaylist = songs;
@@ -401,3 +422,4 @@ document.addEventListener('keydown', (e) => {
             break;
     }
 });
+
