@@ -85,86 +85,78 @@ app.get('/api/search', async (req, res) => {
 });
 
 // Improved Download API
+//
+// NEAT & LEGIBLE DIRECT DOWNLOAD ROUTE
+// Attempts to stream a YouTube video as an MP3 file.
+// NOTE: This will still be unreliable on Vercel due to platform limitations.
+//
 app.get('/api/download/:videoId', async (req, res) => {
     try {
-        const videoId = req.params.videoId;
+        // --- 1. Get and Validate the Video ID ---
+        const { videoId } = req.params;
         const videoURL = `https://youtube.com/watch?v=${videoId}`;
-        
-        console.log('📥 Download request for:', videoId);
-        
-        // Validate video ID
-        if (!videoId || videoId.length !== 11) {
-            console.error('❌ Invalid video ID format:', videoId);
-            return res.status(400).json({ error: 'Invalid video ID format' });
-        }
-        
-        // Check if URL is valid
+
         if (!ytdl.validateURL(videoURL)) {
-            console.error('❌ Invalid video URL:', videoURL);
-            return res.status(400).json({ error: 'Invalid video URL' });
+            console.error('Invalid URL:', videoURL);
+            return res.status(400).json({ error: 'Invalid YouTube URL provided.' });
         }
-        
-        try {
-            // Get video info first
-            const info = await ytdl.getInfo(videoURL);
-            
-            const title = info.videoDetails.title
-                .replace(/[^\w\s]/gi, '')
-                .replace(/\s+/g, ' ')
-                .trim()
-                .substring(0, 50) || 'audio';
-                
-            console.log('📥 Downloading:', title);
-            
-            // Set headers for streaming
-            res.header('Content-Disposition', `attachment; filename="${title}.mp3"`);
-            res.header('Content-Type', 'audio/mpeg');
-            
-            // Create stream with better options
-            const stream = ytdl(videoURL, {
-                quality: 'highestaudio',
-                filter: 'audioonly',
-                highWaterMark: 1 << 25, // 32MB buffer
-                requestOptions: {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                    }
-                }
-            });
-            
-            // Handle stream events
-            stream.on('error', (err) => {
-                console.error('❌ Stream error:', err);
-                if (!res.headersSent) {
-                    res.status(500).json({
-                        error: 'Download failed',
-                        message: err.message
-                    });
-                }
-            });
-            
-            stream.on('finish', () => {
-                console.log('✅ Download completed:', title);
-            });
-            
-            // Pipe the stream to response
-            stream.pipe(res);
-            
-        } catch (streamError) {
-            console.error('❌ Streaming error:', streamError);
-            res.status(500).json({
-                error: 'Download failed',
-                message: 'Failed to process audio stream',
-                details: streamError.message
-            });
-        }
-        
-    } catch (error) {
-        console.error('❌ Download error:', error);
-        res.status(500).json({
-            error: 'Download failed',
-            message: error.message
+
+        console.log(`Starting download process for: ${videoId}`);
+
+        // --- 2. Fetch Video Information ---
+        const info = await ytdl.getInfo(videoURL, {
+            requestOptions: {
+                // Use a standard browser User-Agent to avoid being blocked
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                },
+            },
         });
+
+        // --- 3. Sanitize the Filename ---
+        // Remove special characters that are invalid in filenames
+        const title = info.videoDetails.title.replace(/[\\/:"*?<>|]/g, '').trim();
+        const safeTitle = title.substring(0, 50) || 'audio'; // Limit length
+
+        console.log(`Sanitized Title: ${safeTitle}`);
+
+        // --- 4. Set Headers for File Download ---
+        // These headers tell the browser to treat the response as a downloadable file.
+        res.setHeader('Content-Disposition', `attachment; filename="${safeTitle}.mp3"`);
+        res.setHeader('Content-Type', 'audio/mpeg');
+
+        // --- 5. Create and Pipe the Audio Stream ---
+        const audioStream = ytdl(videoURL, {
+            quality: 'highestaudio', // Get the best audio quality
+            filter: 'audioonly',     // Only get the audio, not video
+            highWaterMark: 1 << 25,  // Increase buffer size to 32MB to help with Vercel's speed
+        });
+
+        // Connect the YouTube audio stream directly to the user's response
+        audioStream.pipe(res);
+
+        // --- 6. Handle Events ---
+        audioStream.on('error', (err) => {
+            console.error('** STREAM ERROR **:', err.message);
+            // Don't try to send a response if one has already been sent
+            if (!res.headersSent) {
+                res.status(500).json({ error: 'A stream error occurred.' });
+            }
+        });
+
+        audioStream.on('end', () => {
+            console.log('Stream finished successfully.');
+        });
+
+    } catch (error) {
+        // --- 7. Catch All Other Errors ---
+        console.error('** DOWNLOAD ROUTE ERROR **:', error.message);
+        if (!res.headersSent) {
+            res.status(500).json({
+                error: 'The download could not be started.',
+                message: 'This video may be private, age-restricted, or otherwise unavailable from our server location.'
+            });
+        }
     }
 });
 
@@ -873,4 +865,5 @@ if (process.env.NODE_ENV !== 'production') {
         console.log(`🎵 Keyan Music server running at http://localhost:${port}`);
     });
 }
+
 
