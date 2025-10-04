@@ -956,31 +956,57 @@ app.get('/', (req, res) => {
                 return songDiv;
             }
             
-            async downloadSong(index) {
-                const song = this.currentPlaylist[index];
-                if (!song || !song.videoId) return;
-                
-                try {
-                    this.showDownloadStatus('Starting download...', 'info');
-                    
-                    const downloadUrl = \`/api/download/\${song.videoId}\`;
-                    
-                    const link = document.createElement('a');
-                    link.href = downloadUrl;
-                    link.download = \`\${song.title} - \${song.artist}.mp3\`;
-                    link.style.display = 'none';
-                    
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    
-                    this.showDownloadStatus('Download started successfully!', 'success');
-                    
-                } catch (error) {
-                    console.error('❌ Download failed:', error);
-                    this.showDownloadStatus('Download failed. Please try again.', 'error');
-                }
-            }
+      async downloadSong(index) {
+    const song = this.currentPlaylist[index];
+    if (!song || !song.videoId) return;
+    
+    try {
+        this.showDownloadStatus('Checking download availability...', 'info');
+        
+        const downloadUrl = '/api/download/' + song.videoId;
+        const response = await fetch(downloadUrl);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            
+            // Show professional message
+            this.showDownloadStatus(
+                errorData.message || 'Download temporarily unavailable', 
+                'info'
+            );
+            
+            // Show streaming suggestion
+            setTimeout(() => {
+                this.showDownloadStatus(
+                    '🎵 Streaming is available! Click play to enjoy this song', 
+                    'success'
+                );
+            }, 3000);
+            
+            return;
+        }
+        
+        // If download works (future implementation)
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = song.title + ' - ' + song.artist + '.mp3';
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        this.showDownloadStatus('Download started successfully!', 'success');
+        
+    } catch (error) {
+        console.error('❌ Download request failed:', error);
+        this.showDownloadStatus(
+            '🎵 Download unavailable, but you can stream this song instantly!', 
+            'info'
+        );
+    }
+}
+
             
             showDownloadStatus(message, type = 'info') {
                 const notification = document.createElement('div');
@@ -1159,6 +1185,7 @@ if (process.env.NODE_ENV !== 'production') {
         console.log(`🎵 Keyan Music server running at http://localhost:${port}`);
     });
 }
+
 
 
 
