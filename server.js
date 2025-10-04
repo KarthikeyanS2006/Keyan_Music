@@ -11,20 +11,34 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Initialize YTMusic
-const ytmusic = new YTMusic();
+// Initialize YTMusic with better error handling
+let ytmusic = null;
 let isInitialized = false;
+let initPromise = null;
 
 async function initializeYTMusic() {
-    if (!isInitialized) {
+    if (isInitialized) return ytmusic;
+    
+    if (initPromise) return initPromise;
+    
+    initPromise = (async () => {
         try {
+            console.log('🎵 Initializing YTMusic API...');
+            ytmusic = new YTMusic();
             await ytmusic.initialize();
             isInitialized = true;
-            console.log('✅ YTMusic API initialized');
+            console.log('✅ YTMusic API initialized successfully');
+            return ytmusic;
         } catch (error) {
             console.error('❌ YTMusic initialization failed:', error);
+            isInitialized = false;
+            ytmusic = null;
+            initPromise = null;
+            throw error;
         }
-    }
+    })();
+    
+    return initPromise;
 }
 
 // Middleware
@@ -43,14 +57,14 @@ app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'ok', 
         message: 'Keyan Music API is running',
-        initialized: isInitialized
+        initialized: isInitialized,
+        timestamp: new Date().toISOString()
     });
 });
 
-// API Routes
+// API Routes with better error handling
 app.get('/api/search', async (req, res) => {
     try {
-        await initializeYTMusic();
         const query = req.query.q;
         const limit = parseInt(req.query.limit) || 20;
         
@@ -59,7 +73,20 @@ app.get('/api/search', async (req, res) => {
         }
         
         console.log(`🔍 API Search: "${query}"`);
-        const results = await ytmusic.search(query);
+        
+        // Initialize YTMusic with timeout
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Initialization timeout')), 30000)
+        );
+        
+        const ytm = await Promise.race([initializeYTMusic(), timeoutPromise]);
+        
+        if (!ytm) {
+            throw new Error('YTMusic not initialized');
+        }
+        
+        console.log('🔍 Performing search...');
+        const results = await ytm.search(query);
         
         // Filter and format results
         const songs = results.filter(item => 
@@ -81,15 +108,16 @@ app.get('/api/search', async (req, res) => {
         res.status(500).json({ 
             error: 'Search failed', 
             message: error.message,
-            initialized: isInitialized
+            initialized: isInitialized,
+            suggestion: 'Try searching again in a few moments'
         });
     }
 });
 
 app.get('/api/artist/:id', async (req, res) => {
     try {
-        await initializeYTMusic();
-        const artistData = await ytmusic.getArtist(req.params.id);
+        const ytm = await initializeYTMusic();
+        const artistData = await ytm.getArtist(req.params.id);
         res.json(artistData);
     } catch (error) {
         console.error('❌ Artist error:', error);
@@ -120,8 +148,12 @@ app.use((error, req, res, next) => {
     });
 });
 
-// Initialize YTMusic on startup
-initializeYTMusic();
+// Initialize YTMusic on startup (but don't block)
+setTimeout(() => {
+    initializeYTMusic().catch(err => {
+        console.error('❌ Background initialization failed:', err);
+    });
+}, 1000);
 
 // For Vercel, we need to export the app
 export default app;
