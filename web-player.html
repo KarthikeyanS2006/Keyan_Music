@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vi Music Clone</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #121212;
+            color: #fff;
+        }
+        .search-container {
+            margin-bottom: 30px;
+        }
+        .search-input {
+            width: 70%;
+            padding: 12px;
+            border: none;
+            border-radius: 25px;
+            background: #333;
+            color: #fff;
+            font-size: 16px;
+        }
+        .search-btn {
+            padding: 12px 24px;
+            background: #1db954;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .results {
+            display: grid;
+            gap: 15px;
+        }
+        .song-item {
+            background: #282828;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .song-info h3 {
+            margin: 0;
+            color: #fff;
+        }
+        .song-info p {
+            margin: 5px 0;
+            color: #b3b3b3;
+        }
+        .play-btn {
+            background: #1db954;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .player-controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #181818;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .control-btn {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 Vi Music Clone</h1>
+    
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search for songs, artists, albums...">
+        <button onclick="searchMusic()" class="search-btn">Search</button>
+    </div>
+
+    <div id="results" class="results"></div>
+
+    <div class="player-controls">
+        <button class="control-btn" onclick="previousSong()">⏮️ Previous</button>
+        <button class="control-btn" onclick="togglePlay()">▶️ Play/Pause</button>
+        <button class="control-btn" onclick="nextSong()">⏭️ Next</button>
+    </div>
+
+    <script>
+        // Note: For browser usage, you'll need to create a backend API
+        // that uses ytmusic-api since it's a Node.js package
+        
+        let currentPlaylist = [];
+        let currentIndex = 0;
+
+        async function searchMusic() {
+            const query = document.getElementById('searchInput').value;
+            if (!query) return;
+
+            try {
+                // This would call your backend API that uses ytmusic-api
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const results = await response.json();
+                
+                displayResults(results);
+            } catch (error) {
+                console.error('Search failed:', error);
+                // For demo purposes, show sample data
+                displaySampleResults(query);
+            }
+        }
+
+        function displaySampleResults(query) {
+            // Sample data for demo
+            const sampleResults = [
+                {
+                    name: `Sample Song 1 - ${query}`,
+                    artist: { name: 'Sample Artist 1' },
+                    duration: '3:45',
+                    videoId: 'sample1'
+                },
+                {
+                    name: `Sample Song 2 - ${query}`,
+                    artist: { name: 'Sample Artist 2' },
+                    duration: '4:12',
+                    videoId: 'sample2'
+                }
+            ];
+            displayResults(sampleResults);
+        }
+
+        function displayResults(results) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            results.forEach((song, index) => {
+                const songDiv = document.createElement('div');
+                songDiv.className = 'song-item';
+                songDiv.innerHTML = `
+                    <div class="song-info">
+                        <h3>${song.name || song.title}</h3>
+                        <p>Artist: ${song.artist?.name || 'Unknown'}</p>
+                        <p>Duration: ${song.duration || 'Unknown'}</p>
+                    </div>
+                    <button class="play-btn" onclick="playSong(${index})">Play</button>
+                `;
+                resultsDiv.appendChild(songDiv);
+            });
+
+            currentPlaylist = results;
+        }
+
+        function playSong(index) {
+            currentIndex = index;
+            const song = currentPlaylist[index];
+            console.log(`Playing: ${song.name || song.title}`);
+            
+            // Here you would implement actual audio playback
+            // You could use YouTube's embed API or audio streams
+            alert(`Playing: ${song.name || song.title}\nVideo ID: ${song.videoId}`);
+        }
+
+        function nextSong() {
+            if (currentPlaylist.length === 0) return;
+            currentIndex = (currentIndex + 1) % currentPlaylist.length;
+            playSong(currentIndex);
+        }
+
+        function previousSong() {
+            if (currentPlaylist.length === 0) return;
+            currentIndex = currentIndex === 0 ? currentPlaylist.length - 1 : currentIndex - 1;
+            playSong(currentIndex);
+        }
+
+        function togglePlay() {
+            console.log('Toggle play/pause');
+            // Implement play/pause logic here
+        }
+
+        // Allow search on Enter key
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchMusic();
+            }
+        });
+    </script>
+</body>
+</html>

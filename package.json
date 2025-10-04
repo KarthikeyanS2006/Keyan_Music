@@ -1,0 +1,16 @@
+{
+  "name": "vimusic-clone",
+  "version": "1.0.0",
+  "description": "Vi Music Clone with beautiful UI",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "ytmusic-api": "latest",
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  }
+}

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keyan Music - Stream Your World</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#007AFF">
+</head>
+<body>
+    <div class="app">
+        <!-- Dynamic Background -->
+        <div class="bg-animation">
+            <div class="gradient-orb orb-1"></div>
+            <div class="gradient-orb orb-2"></div>
+            <div class="gradient-orb orb-3"></div>
+            <div class="gradient-orb orb-4"></div>
+        </div>
+
+        <!-- Header -->
+        <header class="header glass-effect">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-music"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>Keyan Music</h1>
+                    <span class="tagline">Stream Your World</span>
+                </div>
+            </div>
+            <nav class="nav">
+                <a href="#" class="nav-item active">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-compass"></i>
+                    <span>Browse</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-heart"></i>
+                    <span>Library</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-list-music"></i>
+                    <span>Playlists</span>
+                </a>
+            </nav>
+            <div class="user-menu glass-button">
+                <img src="https://via.placeholder.com/40x40/007AFF/FFFFFF?text=K" alt="Profile" class="profile-pic">
+                <span class="username">Karthikeyan</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </header>
+
+        <main class="main">
+            <!-- Hero Search Section -->
+            <section class="hero-section">
+                <div class="hero-content">
+                    <h2 class="hero-title">Discover Your Next Favorite Song</h2>
+                    <p class="hero-subtitle">Millions of tracks at your fingertips</p>
+                    
+                    <div class="search-container">
+                        <div class="search-box glass-effect">
+                            <div class="search-input-container">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" id="searchInput" placeholder="Search artists, songs, or albums..." class="search-input">
+                                <button id="clearSearch" class="clear-btn hidden">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <button id="searchBtn" class="search-btn apple-button">
+                                <i class="fas fa-search"></i>
+                                <span>Search</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Loading -->
+            <div id="loading" class="loading hidden">
+                <div class="loading-content glass-effect">
+                    <div class="apple-spinner"></div>
+                    <p>Finding your music...</p>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <section id="resultsSection" class="results-section hidden">
+                <div class="section-header">
+                    <h2>Search Results</h2>
+                    <div class="view-options">
+                        <button class="view-btn active" data-view="grid">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                        <button class="view-btn" data-view="list">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="songsList" class="songs-list grid-view"></div>
+            </section>
+
+            <!-- Featured Section -->
+            <section id="featuredSection" class="featured-section">
+                <div class="welcome-hero">
+                    <div class="welcome-icon">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <h2 class="welcome-title">Welcome to Keyan Music</h2>
+                    <p class="welcome-subtitle">Your personal music streaming experience</p>
+                </div>
+
+                <div class="features-grid">
+                    <div class="feature-card glass-effect">
+                        <div class="feature-icon">
+                            <i class="fas fa-infinity"></i>
+                        </div>
+                        <h3>Unlimited Streaming</h3>
+                        <p>Access millions of songs from YouTube Music's vast catalog</p>
+                        <div class="feature-highlight"></div>
+                    </div>
+                    
+                    <div class="feature-card glass-effect">
+                        <div class="feature-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <h3>Smart Discovery</h3>
+                        <p>Find new music tailored to your taste with intelligent recommendations</p>
+                        <div class="feature-highlight"></div>
+                    </div>
+                    
+                    <div class="feature-card glass-effect">
+                        <div class="feature-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h3>Cross-Platform</h3>
+                        <p>Seamlessly sync across all your devices and platforms</p>
+                        <div class="feature-highlight"></div>
+                    </div>
+
+                    <div class="feature-card glass-effect">
+                        <div class="feature-icon">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <h3>Premium Quality</h3>
+                        <p>High-definition audio streaming for the ultimate listening experience</p>
+                        <div class="feature-highlight"></div>
+                    </div>
+                </div>
+                
+                <div class="cta-section glass-effect">
+                    <h3>Ready to start your musical journey?</h3>
+                    <p>Search for your favorite songs above and start listening instantly</p>
+                    <button class="cta-button apple-button" onclick="document.getElementById('searchInput').focus()">
+                        <i class="fas fa-play"></i>
+                        <span>Start Listening</span>
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Enhanced Player -->
+        <div class="player glass-effect" id="player">            
+            <div class="player-info">
+                <div class="player-artwork">
+                    <img id="playerThumbnail" src="" alt="" class="player-thumbnail">
+                    <div class="artwork-placeholder">
+                        <i class="fas fa-music"></i>
+                    </div>
+                </div>
+                <div class="player-details">
+                    <div id="playerTitle" class="player-title">Select a song to play</div>
+                    <div id="playerArtist" class="player-artist">Choose from millions of tracks</div>
+                </div>
+                <button class="like-btn glass-button">
+                    <i class="far fa-heart"></i>
+                </button>
+            </div>
+
+            <div class="player-controls">
+                <button id="shuffleBtn" class="control-btn glass-button">
+                    <i class="fas fa-random"></i>
+                </button>
+                <button id="prevBtn" class="control-btn glass-button">
+                    <i class="fas fa-step-backward"></i>
+                </button>
+                <button id="playBtn" class="control-btn primary apple-button">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button id="nextBtn" class="control-btn glass-button">
+                    <i class="fas fa-step-forward"></i>
+                </button>
+                <button id="repeatBtn" class="control-btn glass-button">
+                    <i class="fas fa-redo"></i>
+                </button>
+            </div>
+
+            <div class="player-extras">
+                <div class="volume-control">
+                    <button class="volume-btn glass-button">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                    <div class="volume-slider-container">
+                        <input type="range" id="volumeSlider" min="0" max="100" value="50" class="volume-slider">
+                    </div>
+                </div>
+                
+                <button class="queue-btn glass-button">
+                    <i class="fas fa-list"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- YouTube Player Container -->
+    <div id="youtube-player-container" style="position: absolute; left: -9999px; width: 1px; height: 1px;">
+        <div id="youtube-player"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="script.js"></script>
+</body>
+</html>
