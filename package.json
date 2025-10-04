@@ -1,13 +1,12 @@
 {
   "name": "keyan-music",
   "version": "1.0.0",
-  "description": "Keyan Music - Stream Your World",
+  "description": "Keyan Music - Clean & Simple",
   "main": "server.js",
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js",
-    "build": "npm install"
+    "dev": "node server.js"
   },
   "engines": {
     "node": "22.x"
