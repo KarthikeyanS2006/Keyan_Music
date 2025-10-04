@@ -1,12 +1,16 @@
 {
-  "name": "vimusic-clone",
+  "name": "keyan-music",
   "version": "1.0.0",
-  "description": "Vi Music Clone with beautiful UI",
+  "description": "Keyan Music - Stream Your World",
   "main": "server.js",
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "build": "echo 'No build needed for Node.js'"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "dependencies": {
     "ytmusic-api": "latest",
