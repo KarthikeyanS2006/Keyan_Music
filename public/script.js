@@ -115,18 +115,20 @@ class ViMusicApp {
 }
 
     
-    bindEvents() {
-        // Search events
-        this.searchBtn.addEventListener('click', () => this.performSearch());
-        this.searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.performSearch();
-            this.progressBar.addEventListener('input', (e) => {
+bindEvents() {
+  this.searchBtn.addEventListener('click', () => this.performSearch());
+  this.searchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') this.performSearch();
+  });
+  this.progressBar.addEventListener('input', (e) => {
     if (this.isPlayerReady) {
       const seekToSeconds = (e.target.value / 100) * this.youtubePlayer.getDuration();
       this.youtubePlayer.seekTo(seekToSeconds, true);
     }
+  });
+  // ...rest remains same
 
-        });
+
         
         // Player control events
         this.playBtn.addEventListener('click', () => this.togglePlay());
@@ -291,7 +293,8 @@ onPlayerStateChange(event) {
   if (!this.currentSong) return;
 
   // Extract video ID safely
-  const videoId = extractYouTubeVideoId(this.currentSong.videoId) || this.currentSong.videoId;
+ const videoId = this.extractYouTubeVideoId(this.currentSong.videoId) || this.currentSong.videoId;
+
 
   try {
     const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=0`;
@@ -485,6 +488,7 @@ extractYouTubeVideoId(url) {
     const match = url.match(regex);
     return match ? match[1] : null;
 }
+
 
 
 
