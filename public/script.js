@@ -126,41 +126,46 @@ class ViMusicApp {
         });
     }
     
-   async performSearch() {
-    const query = this.searchInput.value.trim();
+  async performSearch() {
+    let query = this.searchInput.value.trim();
     if (!query) return;
-    
+
+    // Check if the query is a YouTube URL, extract videoId if so
+    const videoId = this.extractYouTubeVideoId(query);
+    if (videoId) {
+        query = videoId; // Use just the videoId as search query
+    }
+
     this.showLoading();
-    
+
     try {
         console.log(`🔍 Searching for: "${query}"`);
-        
-        // Add longer timeout for production
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 seconds
-        
+
         const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=20`, {
             signal: controller.signal
         });
-        
+
         clearTimeout(timeoutId);
-        
+
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.message || 'Search failed');
         }
-        
+
         const songs = await response.json();
-        
+
         if (songs.error) {
             throw new Error(songs.message || songs.error);
         }
-        
+
         this.displayResults(songs);
-        
+
     } catch (error) {
         console.error('❌ Search error:', error);
-        
+
         if (error.name === 'AbortError') {
             this.showError('Search timed out. The server might be initializing. Please try again in a moment.');
         } else {
@@ -170,6 +175,7 @@ class ViMusicApp {
         this.hideLoading();
     }
 }
+
 
     
     displayResults(songs) {
@@ -424,5 +430,12 @@ document.addEventListener('keydown', (e) => {
             break;
     }
 });
+extractYouTubeVideoId(url) {
+    const regex = /(?:youtube\.com\/.*v=|youtu\.be\/)([^&?]+)/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+}
+
+
 
 
