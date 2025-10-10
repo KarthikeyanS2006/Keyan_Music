@@ -810,6 +810,25 @@ body {
     flex: 1;
     justify-content: flex-end;
 }
+        .progress-container {
+  width: 60%;
+  margin: 12px auto 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#progressBar {
+  flex: 1;
+  height: 6px;
+  border-radius: 4px;
+  accent-color: #007AFF;
+}
+#currentTime, #duration {
+  min-width: 38px;
+  font-size: 14px;
+  color: #333;
+}
+
 
 .volume-control {
     display: flex;
@@ -1100,12 +1119,7 @@ body {
             </section>
         </main>
 
-        <!-- Enhanced Player -->
- <div class="progress-container">
-  <span id="currentTime">0:00</span>
-  <input type="range" id="progressBar" min="0" max="100" value="0" step="1">
-  <span id="duration">0:00</span>
-</div>
+
 
 
             <div class="player-info">
@@ -1115,11 +1129,7 @@ body {
                         <i class="fas fa-music"></i>
                     </div>
                 </div>
-                <div class="progress-container">
-                      <span id="currentTime">0:00</span>
-                      <input type="range" id="progressBar" min="0" max="100" value="0" step="1">
-                      <span id="duration">0:00</span>
-                    </div>
+             
                 <div class="player-details">
                     <div id="playerTitle" class="player-title">Select a song to play</div>
                     <div id="playerArtist" class="player-artist">Choose from millions of tracks</div>
@@ -1130,6 +1140,12 @@ body {
             </div>
 
             <div class="player-controls">
+                <div class="progress-container">
+  <span id="currentTime">0:00</span>
+  <input type="range" id="progressBar" min="0" max="100" value="0" step="1">
+  <span id="duration">0:00</span>
+</div>
+
                 <button id="shuffleBtn" class="control-btn glass-button">
                     <i class="fas fa-random"></i>
                 </button>
@@ -1276,6 +1292,7 @@ body {
 
 </body>
 </html>
+
 
 
 
