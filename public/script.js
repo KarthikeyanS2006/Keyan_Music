@@ -13,6 +13,12 @@ class ViMusicApp {
         
     
     }
+    extractYouTubeVideoId(url) {
+    const regex = /(?:youtube\.com\/.*v=|youtu\.be\/)([^&?]+)/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+}
+
     
     initializeElements() {
         // Search elements
@@ -435,6 +441,7 @@ extractYouTubeVideoId(url) {
     const match = url.match(regex);
     return match ? match[1] : null;
 }
+
 
 
 
