@@ -132,6 +132,25 @@ body {
     left: 20%;
     animation-delay: 14s;
 }
+        .progress-container {
+  width: 60%;
+  margin: 12px auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#progressBar {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  accent-color: #ff5500;
+}
+#currentTime, #duration {
+  min-width: 38px;
+  font-size: 14px;
+  color: #1d1d1d;
+}
+
 
 .orb-4 {
     width: 350px;
@@ -1121,7 +1140,7 @@ body {
 
 
 
-
+<div class="player glass-effect" id="player">
             <div class="player-info">
                 <div class="player-artwork">
                     <img id="playerThumbnail" src="" alt="" class="player-thumbnail">
@@ -1179,6 +1198,7 @@ body {
             </div>
         </div>
     </div>
+</div>
 
     <!-- YouTube Player Container -->
     <div id="youtube-player-container" style="position: absolute; left: -9999px; width: 1px; height: 1px;">
@@ -1292,6 +1312,7 @@ body {
 
 </body>
 </html>
+
 
 
 
