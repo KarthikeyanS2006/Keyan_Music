@@ -1101,7 +1101,13 @@ body {
         </main>
 
         <!-- Enhanced Player -->
-        <div class="player glass-effect" id="player">            
+        <div class="player glass-effect" id="player">     
+            <div class="progress-container">
+  <span id="currentTime">0:00</span>
+  <input type="range" id="progressBar" min="0" max="100" value="0" step="1">
+  <span id="duration">0:00</span>
+</div>
+
             <div class="player-info">
                 <div class="player-artwork">
                     <img id="playerThumbnail" src="" alt="" class="player-thumbnail">
@@ -1270,6 +1276,7 @@ body {
 
 </body>
 </html>
+
 
 
 
