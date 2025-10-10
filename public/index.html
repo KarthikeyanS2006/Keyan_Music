@@ -1133,7 +1133,110 @@ body {
     <!-- Scripts -->
     <script src="https://www.youtube.com/iframe_api"></script>
     <script src="script.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
+<script>
+  let player;
+  let currentPlaylist = [];
+  let currentIndex = 0;
+
+  function onYouTubeIframeAPIReady() {
+    player = new YT.Player('player', {
+      height: '150',
+      width: '320',
+      videoId: '',
+      events: {
+        'onReady': onPlayerReady,
+        'onStateChange': onPlayerStateChange
+      }
+    });
+  }
+
+  function onPlayerReady(event) {
+    // No auto play initially
+  }
+
+  function onPlayerStateChange(event) {
+    if (event.data == YT.PlayerState.PLAYING) {
+      const currentVideoId = player.getVideoData().video_id;
+      saveRecentlyPlayed(currentVideoId);
+    }
+  }
+
+  async function searchSongs(query) {
+    const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+    return response.json();
+  }
+
+  function playSongByVideoId(videoId) {
+    if (!player) return;
+    player.loadVideoById(videoId);
+  }
+
+  function saveRecentlyPlayed(videoId) {
+    let recent = JSON.parse(localStorage.getItem('recentlyPlayed') || '[]');
+    recent = recent.filter(id => id !== videoId);
+    recent.unshift(videoId);
+    if (recent.length > 20) recent.pop();
+    localStorage.setItem('recentlyPlayed', JSON.stringify(recent));
+  }
+
+  function getRecentlyPlayed() {
+    return JSON.parse(localStorage.getItem('recentlyPlayed') || '[]');
+  }
+
+  function renderSongsList(containerId, songs, onPlay) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    if (songs.length === 0) {
+      container.innerHTML = '<p>No songs found.</p>';
+      return;
+    }
+    songs.forEach(song => {
+      const div = document.createElement('div');
+      div.innerHTML = `
+        <img src="${song.thumbnail}" alt="${song.title}" width="80" />
+        <strong>${song.title}</strong> by ${song.artist}
+        <button>Play</button>
+      `;
+      div.querySelector('button').addEventListener('click', () => onPlay(song));
+      container.appendChild(div);
+    });
+  }
+
+  async function loadRecentlyPlayedSongs() {
+    const videoIds = getRecentlyPlayed();
+    if (videoIds.length === 0) {
+      renderSongsList('recentlyPlayedList', [], () => {});
+      return;
+    }
+
+    // Fetch song details from search endpoint by video id?
+    // Alternatively, save full song meta in localStorage or IndexedDB for instant load.
+    // For this example, we simulate fetch by mapping local IDs (needs enhancement)
+    
+    const songs = videoIds.map(id => ({
+      videoId: id,
+      title: "Recently Played Song",
+      artist: "Unknown",
+      thumbnail: `https://img.youtube.com/vi/${id}/mqdefault.jpg`
+    }));
+    renderSongsList('recentlyPlayedList', songs, song => playSongByVideoId(song.videoId));
+  }
+
+  // Example: use on a search form submit:
+  /*
+  document.getElementById('searchForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const query = document.getElementById('searchInput').value;
+    const songs = await searchSongs(query);
+    renderSongsList('searchResults', songs, song => playSongByVideoId(song.videoId));
+  };
+  */
+
+</script>
+
 </body>
 </html>
+
 
 
