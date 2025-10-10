@@ -228,38 +228,40 @@ class ViMusicApp {
         return songDiv;
     }
     
-    async playSong(index) {
-        if (index < 0 || index >= this.currentPlaylist.length || !this.isPlayerReady) {
-            if (!this.isPlayerReady) {
-              
-            }
-            return;
-        }
-        
-        this.currentIndex = index;
-        this.currentSong = this.currentPlaylist[index];
-        
-       
-        
-        try {
-            // Load and play the video
-            this.youtubePlayer.loadVideoById(this.currentSong.videoId);
-            
-            this.updatePlayerDisplay();
-            this.updatePlayButtons();
-            
-            // Auto-play after loading
-            setTimeout(() => {
-                if (this.youtubePlayer && this.youtubePlayer.playVideo) {
-                    this.youtubePlayer.playVideo();
-                }
-            }, 1000);
-            
-        } catch (error) {
-            console.error('❌ Error playing song:', error);
-            this.nextSong();
-        }
-    }
+  async playSong(index) {
+  this.currentIndex = index;
+  this.currentSong = this.currentPlaylist[index];
+  
+  if (!this.currentSong) return;
+
+  // Extract video ID safely
+  const videoId = extractYouTubeVideoId(this.currentSong.videoId) || this.currentSong.videoId;
+
+  try {
+    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=0`;
+
+    let iframe = document.getElementById('youtube-iframe');
+    if (iframe) iframe.remove();
+
+    iframe = document.createElement('iframe');
+    iframe.id = 'youtube-iframe';
+    iframe.src = embedUrl;
+    iframe.style.position = 'absolute';
+    iframe.style.left = '-9999px';
+    iframe.style.width = '1px';
+    iframe.style.height = '1px';
+    iframe.allow = 'autoplay';
+
+    document.body.appendChild(iframe);
+
+    this.updatePlayerDisplay();
+    this.setPlayingState(true);
+  } catch (error) {
+    console.error('Play error:', error);
+    this.showNotification('Failed to play song', 'error');
+  }
+}
+
     
     updatePlayerDisplay() {
         if (!this.currentSong) return;
@@ -422,4 +424,5 @@ document.addEventListener('keydown', (e) => {
             break;
     }
 });
+
 
