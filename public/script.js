@@ -6,8 +6,8 @@ class ViMusicApp {
         this.currentSong = null;
         this.youtubePlayer = null;
         this.isPlayerReady = false;
-        
-        this.initializeElements();
+     
+            this.initializeElements();
         this.bindEvents();
         this.initializeYouTubePlayer();
         
@@ -44,6 +44,9 @@ class ViMusicApp {
         this.shuffleBtn = document.getElementById('shuffleBtn');
         this.repeatBtn = document.getElementById('repeatBtn');
         this.volumeSlider = document.getElementById('volumeSlider');
+           this.progressBar = document.getElementById('progressBar');
+      this.currentTimeLabel = document.getElementById('currentTime');
+      this.durationLabel = document.getElementById('duration');
     }
     
     initializeYouTubePlayer() {
@@ -117,6 +120,12 @@ class ViMusicApp {
         this.searchBtn.addEventListener('click', () => this.performSearch());
         this.searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.performSearch();
+            this.progressBar.addEventListener('input', (e) => {
+    if (this.isPlayerReady) {
+      const seekToSeconds = (e.target.value / 100) * this.youtubePlayer.getDuration();
+      this.youtubePlayer.seekTo(seekToSeconds, true);
+    }
+
         });
         
         // Player control events
@@ -131,6 +140,41 @@ class ViMusicApp {
             this.setVolume(e.target.value);
         });
     }
+                                          
+updateProgress() {
+  if (!this.isPlayerReady || !this.youtubePlayer) return;
+  
+  const duration = this.youtubePlayer.getDuration();
+  const currentTime = this.youtubePlayer.getCurrentTime();
+  if (isNaN(duration) || isNaN(currentTime)) return;
+  
+  const progressPercent = (currentTime / duration) * 100;
+  
+  this.progressBar.value = progressPercent;
+  this.currentTimeLabel.textContent = this.formatTime(currentTime);
+  this.durationLabel.textContent = this.formatTime(duration);
+}
+
+formatTime(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// In your player state change or during playback, call updateProgress regularly
+onPlayerStateChange(event) {
+  // Existing switch case...
+  if (event.data == YT.PlayerState.PLAYING) {
+    this.setPlayingState(true);
+    this.progressInterval = setInterval(() => this.updateProgress(), 500);
+  } else {
+    this.setPlayingState(false);
+    if (this.progressInterval) {
+      clearInterval(this.progressInterval);
+      this.progressInterval = null;
+    }
+  }
+}
     
   async performSearch() {
     let query = this.searchInput.value.trim();
@@ -441,6 +485,7 @@ extractYouTubeVideoId(url) {
     const match = url.match(regex);
     return match ? match[1] : null;
 }
+
 
 
 
