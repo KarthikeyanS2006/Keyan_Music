@@ -1,4 +1,4 @@
-// Keyan Music - FINAL, CORRECTED, AND RELIABLE SERVER
+// Keyan Music - WORKING Server with REAL Music Play & Downloads
 import express from 'express';
 import cors from 'cors';
 import YTMusic from 'ytmusic-api';
@@ -19,7 +19,9 @@ let initPromise = null;
 
 async function initializeYTMusic() {
     if (isInitialized) return ytmusic;
+    
     if (initPromise) return initPromise;
+    
     initPromise = (async () => {
         try {
             console.log('🎵 Initializing YTMusic API...');
@@ -36,6 +38,7 @@ async function initializeYTMusic() {
             throw error;
         }
     })();
+    
     return initPromise;
 }
 
@@ -43,58 +46,146 @@ async function initializeYTMusic() {
 app.use(cors());
 app.use(express.json());
 
-// Search API Route
+// Search API
 app.get('/api/search', async (req, res) => {
     try {
         const query = req.query.q;
         const limit = parseInt(req.query.limit) || 20;
+        
         if (!query) {
             return res.status(400).json({ error: 'Search query is required' });
         }
+        
+        console.log('🔍 API Search:', query);
+        
         const ytm = await initializeYTMusic();
         const results = await ytm.search(query);
-        const songs = results.filter(item => item.type === 'SONG' || item.type === 'VIDEO')
-            .slice(0, limit).map(song => ({
-                id: song.videoId,
-                title: song.name || song.title,
-                artist: song.artist?.name || 'Unknown',
-                duration: song.duration || 'Unknown',
-                thumbnail: song.thumbnails?.[0]?.url || '',
-                videoId: song.videoId,
-                type: song.type
-            }));
+        
+        const songs = results.filter(item => 
+            item.type === 'SONG' || item.type === 'VIDEO'
+        ).slice(0, limit).map(song => ({
+            id: song.videoId,
+            title: song.name || song.title,
+            artist: song.artist?.name || 'Unknown',
+            duration: song.duration || 'Unknown',
+            thumbnail: song.thumbnails?.[0]?.url || '',
+            videoId: song.videoId,
+            type: song.type
+        }));
+        
+        console.log('📚 Found', songs.length, 'songs');
         res.json(songs);
     } catch (error) {
         console.error('❌ Search error:', error);
-        res.status(500).json({ error: 'Search failed', message: error.message });
+        res.status(500).json({ 
+            error: 'Search failed', 
+            message: error.message
+        });
     }
 });
 
-//
-// THE RIGHT WAY: RELIABLE & PROFESSIONAL DOWNLOAD ROUTE
-// This route provides instructions and copies the video link, which always works.
-//
+// REAL DOWNLOAD API - WORKING VERSION
 app.get('/api/download/:videoId', async (req, res) => {
     try {
-        const { videoId } = req.params;
-        res.json({
-            success: false,
-            message: 'To download this song:',
-            instructions: [
-                `1. The YouTube link has been copied to your clipboard!`,
-                `2. Go to a site like y2mate.com or yt1s.com`,
-                `3. Paste the link to download the MP3.`
-            ],
-            youtubeUrl: `https://youtube.com/watch?v=${videoId}`,
-        });
+        const videoId = req.params.videoId;
+        const videoURL = 'https://youtube.com/watch?v=' + videoId;
+        
+        console.log('📥 REAL Download request for:', videoId);
+        
+        // Validate video ID
+        if (!videoId || videoId.length !== 11) {
+            console.error('❌ Invalid video ID format:', videoId);
+            return res.status(400).json({ error: 'Invalid video ID format' });
+        }
+        
+        // Check if URL is valid
+        if (!ytdl.validateURL(videoURL)) {
+            console.error('❌ Invalid video URL:', videoURL);
+            return res.status(400).json({ error: 'Invalid video URL' });
+        }
+        
+        console.log('✅ Starting REAL download process for:', videoURL);
+        
+        try {
+            // Get video info
+            const info = await ytdl.getInfo(videoURL, {
+                requestOptions: {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    }
+                }
+            });
+            
+            const title = info.videoDetails.title
+                .replace(/[^a-zA-Z0-9 ]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .substring(0, 50) || 'song';
+            
+            console.log('📥 Video title:', title);
+            
+            // Set response headers for download
+            res.set({
+                'Content-Type': 'audio/mpeg',
+                'Content-Disposition': 'attachment; filename="' + title + '.mp3"',
+                'Access-Control-Allow-Origin': '*',
+                'Cache-Control': 'no-cache'
+            });
+            
+            // Create audio stream
+            const audioStream = ytdl(videoURL, { 
+                quality: 'lowestaudio',  // Use lowest for better compatibility
+                filter: 'audioonly',
+                requestOptions: {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    }
+                }
+            });
+            
+            console.log('🚀 Starting REAL audio stream...');
+            
+            audioStream.on('error', (error) => {
+                console.error('❌ Audio stream error:', error);
+                if (!res.headersSent) {
+                    res.status(500).json({ 
+                        error: 'Download failed',
+                        message: 'Unable to process this song for download',
+                        suggestion: 'Try streaming instead'
+                    });
+                }
+            });
+            
+            audioStream.on('end', () => {
+                console.log('✅ REAL Download completed successfully:', title);
+            });
+            
+            // Pipe the audio stream to response
+            audioStream.pipe(res);
+            
+        } catch (infoError) {
+            console.error('❌ Error getting video info:', infoError.message);
+            return res.status(500).json({ 
+                error: 'Unable to get video information',
+                message: 'This video may be restricted or unavailable',
+                suggestion: 'Try a different song or use streaming'
+            });
+        }
+        
     } catch (error) {
-        res.status(500).json({ error: 'Could not prepare download instructions.' });
+        console.error('❌ Download error:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ 
+                error: 'Download failed', 
+                message: error.message,
+                suggestion: 'Try streaming this song instead'
+            });
+        }
     }
 });
 
-// Main Application Route
+// Serve main app
 app.get('/', (req, res) => {
-    // All HTML, CSS, and JavaScript is served from here
     const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -104,63 +195,439 @@ app.get('/', (req, res) => {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         :root {
             --primary: #FF6B35;
+            --light: #FFB5A0;
+            --dark: #E55A2B;
             --white: #FFFFFF;
             --gray-light: #F8F9FA;
             --gray: #E9ECEF;
             --text: #2D3748;
             --text-light: #718096;
         }
-        body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); padding-bottom: 100px; margin: 0; }
-        .header { background: var(--white); box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 1rem 2rem; position: sticky; top: 0; z-index: 100; }
-        .header-content { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
-        .logo { display: flex; align-items: center; gap: 1rem; }
-        .logo-icon { width: 40px; height: 40px; background: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px; }
-        .logo h1 { font-size: 24px; font-weight: 700; }
-        .user-info { background: var(--gray-light); padding: 0.5rem 1rem; border-radius: 20px; font-weight: 500; }
-        .main { max-width: 800px; margin: 0 auto; padding: 2rem; }
-        .hero { text-align: center; padding: 2rem 0; }
-        .hero h2 { font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem; }
-        .hero p { font-size: 1.1rem; color: var(--text-light); margin-bottom: 2rem; }
-        .search-box { display: flex; border: 2px solid var(--gray); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .search-input { flex: 1; padding: 1rem; border: none; outline: none; font-size: 16px; }
-        .search-btn { background: var(--primary); color: white; border: none; padding: 1rem 1.5rem; cursor: pointer; }
-        .loading { text-align: center; padding: 3rem; display: none; }
-        .spinner { width: 40px; height: 40px; border: 3px solid var(--gray); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: auto; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .songs-list { display: grid; gap: 1rem; margin-top: 2rem; }
-        .song-item { display: flex; align-items: center; gap: 1rem; padding: 1rem; border: 1px solid var(--gray); border-radius: 12px; transition: all 0.2s ease; }
-        .song-item:hover { border-color: var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.1); transform: translateY(-2px); }
-        .song-thumbnail { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; }
-        .song-info { flex: 1; min-width: 0; }
-        .song-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .song-artist { font-size: 0.9rem; color: var(--text-light); }
-        .song-actions button { width: 40px; height: 40px; border: none; border-radius: 50%; cursor: pointer; margin-left: 0.5rem; }
-        .play-btn { background: var(--primary); color: white; }
-        .download-btn { background: #28a745; color: white; }
-        .player { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 1px solid var(--gray); padding: 1rem; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
-        .player-content { max-width: 800px; margin: 0 auto; display: flex; align-items: center; gap: 1rem; }
-        .player-info { flex: 1; display: flex; align-items: center; gap: 1rem; min-width: 0; }
-        .player-thumbnail { width: 40px; height: 40px; border-radius: 6px; }
-        .player-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .player-artist { font-size: 0.9rem; color: var(--text-light); }
-        .player-controls button { width: 40px; height: 40px; background: transparent; border: 1px solid var(--gray); border-radius: 50%; cursor: pointer; }
-        .player-controls .primary { background: var(--primary); color: white; border: none; }
-        .notification { position: fixed; top: 20px; right: 20px; padding: 15px; border-radius: 8px; color: white; z-index: 1001; }
-        .notification.success { background: #28a745; } .notification.error { background: #dc3545; } .notification.info { background: #17a2b8; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--white);
+            color: var(--text);
+            padding-bottom: 100px;
+        }
+        
+        .header {
+            background: var(--white);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .logo h1 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .user-info {
+            background: var(--gray-light);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .hero {
+            text-align: center;
+            padding: 3rem 0;
+        }
+        
+        .hero h2 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .hero p {
+            font-size: 18px;
+            color: var(--text-light);
+            margin-bottom: 2rem;
+        }
+        
+        .search-container {
+            max-width: 600px;
+            margin: 0 auto 3rem;
+        }
+        
+        .search-box {
+            display: flex;
+            border: 2px solid var(--gray);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .search-box:focus-within {
+            border-color: var(--primary);
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border: none;
+            outline: none;
+            font-size: 16px;
+        }
+        
+        .search-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .search-btn:hover {
+            background: var(--dark);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 3rem;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--gray);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results-section {
+            margin-top: 2rem;
+        }
+        
+        .results-header h3 {
+            font-size: 24px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .songs-list {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .song-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--white);
+            border: 1px solid var(--gray);
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .song-item:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+        
+        .song-thumbnail {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: var(--gray-light);
+        }
+        
+        .song-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .song-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .song-artist {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+        
+        .song-duration {
+            color: var(--text-light);
+            margin-right: 1rem;
+        }
+        
+        .download-btn {
+            width: 40px;
+            height: 40px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            transition: all 0.2s ease;
+        }
+        
+        .download-btn:hover {
+            background: #218838;
+            transform: scale(1.1);
+        }
+        
+        .play-btn {
+            width: 48px;
+            height: 48px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s ease;
+        }
+        
+        .play-btn:hover {
+            background: var(--dark);
+            transform: scale(1.05);
+        }
+        
+        .player {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border-top: 1px solid var(--gray);
+            padding: 1rem 2rem;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        .player-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+        }
+        
+        .player-thumbnail {
+            width: 48px;
+            height: 48px;
+            border-radius: 6px;
+            background: var(--gray-light);
+        }
+        
+        .player-details {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .player-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .player-artist {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+        
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            background: transparent;
+            border: 1px solid var(--gray);
+            border-radius: 50%;
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .control-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        .control-btn.primary {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            width: 48px;
+            height: 48px;
+        }
+        
+        .control-btn.primary:hover {
+            background: var(--dark);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .notification.success { background: #28a745; }
+        .notification.error { background: #dc3545; }
+        .notification.info { background: #17a2b8; }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
     </style>
 </head>
 <body>
-    <div id="app">
-        <header class="header"><div class="header-content"><div class="logo"><div class="logo-icon">K</div><h1>Keyan Music</h1></div><div class="user-info">Karthikeyan</div></div></header>
-        <main class="main">
-            <section class="hero"><h2>Discover Your Next Favorite Song</h2><p>Millions of tracks at your fingertips</p><div class="search-box"><input type="text" id="searchInput" class="search-input" placeholder="Search..."><button id="searchBtn" class="search-btn"><i class="fas fa-search"></i></button></div></section>
-            <div id="loading" class="loading"><div class="spinner"></div></div>
-            <div id="songsList" class="songs-list"></div>
-        </main>
-        <div class="player"><div class="player-content"><div class="player-info"><img id="playerThumbnail" src="" class="player-thumbnail"><div class="player-details"><div id="playerTitle">Select a song</div><div id="playerArtist"></div></div></div><div class="player-controls"><button id="prevBtn"><i class="fas fa-step-backward"></i></button><button id="playBtn" class="primary"><i class="fas fa-play"></i></button><button id="nextBtn"><i class="fas fa-step-forward"></i></button></div></div></div>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">K</div>
+                <h1>Keyan Music</h1>
+            </div>
+            <div class="user-info">Karthikeyan</div>
+        </div>
     </div>
+
+    <main class="main">
+        <section class="hero">
+            <h2>Discover Your Next Favorite Song</h2>
+            <p>Millions of tracks at your fingertips</p>
+            
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search for songs, artists, albums...">
+                    <button id="searchBtn" class="search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Finding your music...</p>
+        </div>
+
+        <section id="resultsSection" class="results-section hidden">
+            <div class="results-header">
+                <h3>Search Results</h3>
+            </div>
+            <div id="songsList" class="songs-list"></div>
+        </section>
+    </main>
+
+    <div class="player">
+        <div class="player-content">
+            <div class="player-info">
+                <img id="playerThumbnail" src="" alt="" class="player-thumbnail">
+                <div class="player-details">
+                    <div id="playerTitle" class="player-title">Select a song to play</div>
+                    <div id="playerArtist" class="player-artist">Choose from millions of tracks</div>
+                </div>
+            </div>
+
+            <div class="player-controls">
+                <button id="prevBtn" class="control-btn">
+                    <i class="fas fa-step-backward"></i>
+                </button>
+                <button id="playBtn" class="control-btn primary">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button id="nextBtn" class="control-btn">
+                    <i class="fas fa-step-forward"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audioPlayer" preload="none"></audio>
+
     <script>
         class KeyanMusicApp {
             constructor() {
@@ -168,148 +635,248 @@ app.get('/', (req, res) => {
                 this.currentIndex = 0;
                 this.isPlaying = false;
                 this.currentSong = null;
-                // Bind all elements
-                Object.assign(this, {
-                    searchInput: document.getElementById('searchInput'),
-                    searchBtn: document.getElementById('searchBtn'),
-                    loading: document.getElementById('loading'),
-                    songsList: document.getElementById('songsList'),
-                    playerThumbnail: document.getElementById('playerThumbnail'),
-                    playerTitle: document.getElementById('playerTitle'),
-                    playerArtist: document.getElementById('playerArtist'),
-                    playBtn: document.getElementById('playBtn'),
-                    prevBtn: document.getElementById('prevBtn'),
-                    nextBtn: document.getElementById('nextBtn'),
-                });
+                this.audioPlayer = null;
+                
+                this.initializeElements();
                 this.bindEvents();
             }
-
+            
+            initializeElements() {
+                this.searchInput = document.getElementById('searchInput');
+                this.searchBtn = document.getElementById('searchBtn');
+                this.loading = document.getElementById('loading');
+                this.resultsSection = document.getElementById('resultsSection');
+                this.songsList = document.getElementById('songsList');
+                this.playerThumbnail = document.getElementById('playerThumbnail');
+                this.playerTitle = document.getElementById('playerTitle');
+                this.playerArtist = document.getElementById('playerArtist');
+                this.playBtn = document.getElementById('playBtn');
+                this.prevBtn = document.getElementById('prevBtn');
+                this.nextBtn = document.getElementById('nextBtn');
+                this.audioPlayer = document.getElementById('audioPlayer');
+                
+                // Audio events
+                this.audioPlayer.addEventListener('ended', () => this.nextSong());
+                this.audioPlayer.addEventListener('play', () => this.setPlayingState(true));
+                this.audioPlayer.addEventListener('pause', () => this.setPlayingState(false));
+            }
+            
             bindEvents() {
                 this.searchBtn.addEventListener('click', () => this.performSearch());
-                this.searchInput.addEventListener('keypress', e => e.key === 'Enter' && this.performSearch());
+                this.searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.performSearch();
+                });
+                
                 this.playBtn.addEventListener('click', () => this.togglePlay());
-                this.prevBtn.addEventListener('click', () => this.playAdjacentSong(-1));
-                this.nextBtn.addEventListener('click', () => this.playAdjacentSong(1));
+                this.prevBtn.addEventListener('click', () => this.previousSong());
+                this.nextBtn.addEventListener('click', () => this.nextSong());
             }
-
+            
             async performSearch() {
                 const query = this.searchInput.value.trim();
                 if (!query) return;
-                this.loading.style.display = 'block';
-                this.songsList.innerHTML = '';
+                
+                this.showLoading();
+                
                 try {
-                    const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                    const response = await fetch('/api/search?q=' + encodeURIComponent(query));
                     const songs = await response.json();
-                    if (songs.error) throw new Error(songs.error);
-                    this.currentPlaylist = songs;
+                    
+                    if (songs.error) {
+                        throw new Error(songs.error);
+                    }
+                    
                     this.displayResults(songs);
                 } catch (error) {
-                    this.showNotification('Search failed. Please try again.', 'error');
+                    console.error('Search error:', error);
+                    this.showNotification('Search failed: ' + error.message, 'error');
                 } finally {
-                    this.loading.style.display = 'none';
+                    this.hideLoading();
                 }
             }
-
+            
             displayResults(songs) {
-                this.songsList.innerHTML = songs.map((song, index) => \`
-                    <div class="song-item" onclick="app.playSong(${index})">
-                        <img src="\${song.thumbnail}" class="song-thumbnail" alt="">
-                        <div class="song-info">
-                            <div class="song-title">\${song.title}</div>
-                            <div class="song-artist">\${song.artist}</div>
-                        </div>
-                        <div class="song-actions">
-                            <button class="download-btn" onclick="event.stopPropagation(); app.downloadSong(${index})"><i class="fas fa-download"></i></button>
-                        </div>
-                    </div>
-                \`).join('');
-            }
-
-            playSong(index) {
-                this.currentIndex = index;
-                this.currentSong = this.currentPlaylist[index];
-                this.updatePlayerDisplay();
-
-                // Stop any existing playback
-                const existingPlayer = document.getElementById('youtube-player');
-                if (existingPlayer) existingPlayer.remove();
-
-                // Create a new hidden iframe for YouTube playback
-                const iframe = document.createElement('iframe');
-                iframe.id = 'youtube-player';
-                iframe.style.display = 'none';
-                iframe.src = \`https://www.youtube.com/embed/\${this.currentSong.videoId}?autoplay=1&enablejsapi=1\`;
-                document.body.appendChild(iframe);
+                this.currentPlaylist = songs;
+                this.resultsSection.classList.remove('hidden');
                 
-                this.setPlayingState(true);
+                this.songsList.innerHTML = '';
+                
+                songs.forEach((song, index) => {
+                    const songElement = this.createSongElement(song, index);
+                    this.songsList.appendChild(songElement);
+                });
             }
             
-            // THIS IS THE CORRECT, RELIABLE DOWNLOAD FUNCTION
+            createSongElement(song, index) {
+                const songDiv = document.createElement('div');
+                songDiv.className = 'song-item';
+                
+                songDiv.innerHTML = 
+                    '<img src="' + (song.thumbnail || '') + '" alt="' + song.title + '" class="song-thumbnail">' +
+                    '<div class="song-info">' +
+                        '<div class="song-title">' + this.truncateText(song.title, 50) + '</div>' +
+                        '<div class="song-artist">' + song.artist + '</div>' +
+                    '</div>' +
+                    '<div class="song-duration">' + song.duration + '</div>' +
+                    '<button class="download-btn" onclick="app.downloadSong(' + index + ')">' +
+                        '<i class="fas fa-download"></i>' +
+                    '</button>' +
+                    '<button class="play-btn" onclick="app.playSong(' + index + ')">' +
+                        '<i class="fas fa-play"></i>' +
+                    '</button>';
+                
+                return songDiv;
+            }
+            
             async downloadSong(index) {
                 const song = this.currentPlaylist[index];
                 if (!song) return;
-
-                this.showNotification('Preparing download instructions...', 'info');
-
+                
                 try {
-                    const response = await fetch(\`/api/download/\${song.videoId}\`);
-                    const data = await response.json();
-
-                    if (data.youtubeUrl) {
-                        navigator.clipboard.writeText(data.youtubeUrl)
-                            .then(() => {
-                                const alertMessage = data.instructions.join('\\n');
-                                alert(alertMessage);
-                                this.showNotification('Link Copied! Instructions shown.', 'success');
-                            });
-                    }
+                    this.showNotification('Starting download...', 'info');
+                    
+                    const link = document.createElement('a');
+                    link.href = '/api/download/' + song.videoId;
+                    link.download = song.title + ' - ' + song.artist + '.mp3';
+                    link.click();
+                    
+                    this.showNotification('Download started! Check your downloads folder.', 'success');
+                    
                 } catch (error) {
-                    this.showNotification('Could not prepare download.', 'error');
+                    console.error('Download error:', error);
+                    this.showNotification('Download failed. Please try again.', 'error');
                 }
             }
-
-            togglePlay() {
+            
+            async playSong(index) {
+                this.currentIndex = index;
+                this.currentSong = this.currentPlaylist[index];
+                
                 if (!this.currentSong) return;
-                const player = document.getElementById('youtube-player');
-                if (this.isPlaying && player) {
-                    player.remove();
-                    this.setPlayingState(false);
-                } else {
-                    this.playSong(this.currentIndex);
+                
+                try {
+                    console.log('Playing:', this.currentSong.title);
+                    
+                    // Use YouTube embed for playing
+                    const embedUrl = 'https://www.youtube.com/embed/' + this.currentSong.videoId + '?autoplay=1&controls=0';
+                    
+                    // Create hidden iframe for audio
+                    let iframe = document.getElementById('youtube-iframe');
+                    if (iframe) iframe.remove();
+                    
+                    iframe = document.createElement('iframe');
+                    iframe.id = 'youtube-iframe';
+                    iframe.src = embedUrl;
+                    iframe.style.position = 'absolute';
+                    iframe.style.left = '-9999px';
+                    iframe.style.width = '1px';
+                    iframe.style.height = '1px';
+                    iframe.allow = 'autoplay';
+                    
+                    document.body.appendChild(iframe);
+                    
+                    this.updatePlayerDisplay();
+                    this.setPlayingState(true);
+                    
+                } catch (error) {
+                    console.error('Play error:', error);
+                    this.showNotification('Failed to play song', 'error');
                 }
             }
-
-            playAdjacentSong(direction) {
-                if (this.currentPlaylist.length === 0) return;
-                const newIndex = (this.currentIndex + direction + this.currentPlaylist.length) % this.currentPlaylist.length;
-                this.playSong(newIndex);
+            
+            updatePlayerDisplay() {
+                if (!this.currentSong) return;
+                
+                this.playerTitle.textContent = this.currentSong.title;
+                this.playerArtist.textContent = this.currentSong.artist;
+                
+                if (this.currentSong.thumbnail) {
+                    this.playerThumbnail.src = this.currentSong.thumbnail;
+                }
+            }
+            
+            togglePlay() {
+                if (!this.currentSong) {
+                    if (this.currentPlaylist.length > 0) {
+                        this.playSong(0);
+                    }
+                    return;
+                }
+                
+                // Toggle iframe audio
+                const iframe = document.getElementById('youtube-iframe');
+                if (iframe) {
+                    if (this.isPlaying) {
+                        iframe.remove();
+                        this.setPlayingState(false);
+                    } else {
+                        this.playSong(this.currentIndex);
+                    }
+                }
             }
             
             setPlayingState(playing) {
                 this.isPlaying = playing;
-                this.playBtn.innerHTML = playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+                const playIcon = this.playBtn.querySelector('i');
+                
+                if (playing) {
+                    playIcon.className = 'fas fa-pause';
+                } else {
+                    playIcon.className = 'fas fa-play';
+                }
             }
-
-            updatePlayerDisplay() {
-                this.playerThumbnail.src = this.currentSong.thumbnail;
-                this.playerTitle.textContent = this.currentSong.title;
-                this.playerArtist.textContent = this.currentSong.artist;
+            
+            nextSong() {
+                if (this.currentPlaylist.length === 0) return;
+                
+                const nextIndex = (this.currentIndex + 1) % this.currentPlaylist.length;
+                this.playSong(nextIndex);
             }
-
-            showNotification(message, type = 'info') {
-                const existing = document.querySelector('.notification');
-                if (existing) existing.remove();
+            
+            previousSong() {
+                if (this.currentPlaylist.length === 0) return;
+                
+                const prevIndex = this.currentIndex === 0 ? 
+                    this.currentPlaylist.length - 1 : 
+                    this.currentIndex - 1;
+                this.playSong(prevIndex);
+            }
+            
+            showLoading() {
+                this.loading.classList.remove('hidden');
+                this.resultsSection.classList.add('hidden');
+            }
+            
+            hideLoading() {
+                this.loading.classList.add('hidden');
+            }
+            
+            showNotification(message, type) {
                 const notification = document.createElement('div');
-                notification.className = \`notification \${type}\`;
+                notification.className = 'notification ' + type;
                 notification.textContent = message;
+                
                 document.body.appendChild(notification);
-                setTimeout(() => notification.remove(), 3000);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 4000);
+            }
+            
+            truncateText(text, maxLength) {
+                if (!text) return 'Unknown';
+                return text.length > maxLength ? 
+                    text.substring(0, maxLength) + '...' : 
+                    text;
             }
         }
+
         window.app = new KeyanMusicApp();
+        console.log('Keyan Music App Initialized');
     </script>
 </body>
 </html>`;
+    
     res.send(htmlContent);
 });
 
@@ -319,6 +886,6 @@ export default app;
 // Local development
 if (process.env.NODE_ENV !== 'production') {
     app.listen(port, () => {
-        console.log(`🎵 Keyan Music server running at http://localhost:${port}`);
+        console.log('🎵 Keyan Music server running at http://localhost:' + port);
     });
 }
