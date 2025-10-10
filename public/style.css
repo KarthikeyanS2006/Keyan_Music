@@ -176,6 +176,26 @@ body {
     transform: translateY(-2px);
     box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5);
 }
+.progress-container {
+  width: 60%;
+  margin: 10px auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#progressBar {
+  flex: 1;
+  height: 6px;
+  border-radius: 4px;
+  accent-color: #ff5500; /* or your brand color */
+}
+#currentTime, #duration {
+  width: 38px;
+  text-align: center;
+  color: #333;
+  font-size: 14px;
+}
+
 
 /* Apple Button */
 .apple-button {
@@ -913,4 +933,5 @@ body {
         transition-duration: 0.01ms !important;
     }
 }
+
 
