@@ -854,6 +854,34 @@ body {
     appearance: none;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
+        .progress-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+#progressBar {
+  flex: 1;
+  cursor: pointer;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.3);
+  outline: none;
+}
+
+#progressBar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  cursor: pointer;
+  box-shadow: 0 0 2px rgba(0,0,0,0.5);
+  margin-top: -4px;
+}
+
 
 .queue-btn {
     width: 36px;
@@ -1081,6 +1109,11 @@ body {
                         <i class="fas fa-music"></i>
                     </div>
                 </div>
+                <div class="progress-container">
+                      <span id="currentTime">0:00</span>
+                      <input type="range" id="progressBar" min="0" max="100" value="0" step="1">
+                      <span id="duration">0:00</span>
+                    </div>
                 <div class="player-details">
                     <div id="playerTitle" class="player-title">Select a song to play</div>
                     <div id="playerArtist" class="player-artist">Choose from millions of tracks</div>
@@ -1237,6 +1270,7 @@ body {
 
 </body>
 </html>
+
 
 
 
